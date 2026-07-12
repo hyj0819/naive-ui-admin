@@ -16,6 +16,21 @@ const {
   pageAnimateType,
 } = projectSetting;
 
+const PROJECT_SETTING_KEY = 'PROJECT_SETTING';
+
+// 从 localStorage 读取用户保存的设置
+function loadLocalProjectSetting(): Partial<ProjectSettingState> {
+  try {
+    const raw = localStorage.getItem(PROJECT_SETTING_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {
+    // ignore
+  }
+  return {};
+}
+
+const savedProject = loadLocalProjectSetting();
+
 interface ProjectSettingState {
   navMode: string; //导航模式
   navTheme: string; //导航风格
@@ -33,17 +48,17 @@ interface ProjectSettingState {
 export const useProjectSettingStore = defineStore({
   id: 'app-project-setting',
   state: (): ProjectSettingState => ({
-    navMode: navMode,
-    navTheme,
-    isMobile,
-    headerSetting,
-    showFooter,
-    menuSetting,
-    multiTabsSetting,
-    crumbsSetting,
-    permissionMode,
-    isPageAnimate,
-    pageAnimateType,
+    navMode: savedProject.navMode ?? navMode,
+    navTheme: savedProject.navTheme ?? navTheme,
+    isMobile: savedProject.isMobile ?? isMobile,
+    headerSetting: savedProject.headerSetting ?? headerSetting,
+    showFooter: savedProject.showFooter ?? showFooter,
+    menuSetting: savedProject.menuSetting ?? menuSetting,
+    multiTabsSetting: savedProject.multiTabsSetting ?? multiTabsSetting,
+    crumbsSetting: savedProject.crumbsSetting ?? crumbsSetting,
+    permissionMode: savedProject.permissionMode ?? permissionMode,
+    isPageAnimate: savedProject.isPageAnimate ?? isPageAnimate,
+    pageAnimateType: savedProject.pageAnimateType ?? pageAnimateType,
   }),
   getters: {
     getNavMode(): string {

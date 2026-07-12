@@ -24,13 +24,34 @@
   import { useScreenLockStore } from '@/store/modules/screenLock.js';
   import { useRoute } from 'vue-router';
   import { useDesignSettingStore } from '@/store/modules/designSetting';
+  import { useProjectSettingStore } from '@/store/modules/projectSetting';
   import { lighten } from '@/utils/index';
 
   const route = useRoute();
   const useScreenLock = useScreenLockStore();
   const designStore = useDesignSettingStore();
+  const settingStore = useProjectSettingStore();
   const isLock = computed(() => useScreenLock.isLocked);
   const lockTime = computed(() => useScreenLock.lockTime);
+
+  // 持久化：监听 designSetting store 变更，自动写入 localStorage
+  designStore.$subscribe(
+    () => {
+      localStorage.setItem(
+        'DESIGN_SETTING',
+        JSON.stringify({ darkTheme: designStore.darkTheme, appTheme: designStore.appTheme })
+      );
+    },
+    { detached: true }
+  );
+
+  // 持久化：监听 projectSetting store 变更，自动写入 localStorage
+  settingStore.$subscribe(
+    (_, state) => {
+      localStorage.setItem('PROJECT_SETTING', JSON.stringify(state));
+    },
+    { detached: true }
+  );
 
   /**
    * @type import('naive-ui').GlobalThemeOverrides
