@@ -6,122 +6,202 @@
       </n-card>
     </div>
     <n-card :bordered="false" class="mt-4 proCard">
+      <!-- 筛选栏 -->
+      <div class="filter-bar mb-4">
+        <n-space>
+          <n-select
+            v-model:value="filterParams.task_type"
+            placeholder="任务类型"
+            :options="taskTypeOptions"
+            clearable
+            style="width: 140px"
+          />
+          <n-select
+            v-model:value="filterParams.business_line_id"
+            placeholder="业务线"
+            :options="businessLineOptions"
+            clearable
+            style="width: 160px"
+          />
+          <n-select
+            v-model:value="filterParams.status"
+            placeholder="状态"
+            :options="statusOptions"
+            clearable
+            style="width: 120px"
+          />
+          <n-button type="primary" @click="handleSearch">搜索</n-button>
+          <n-button @click="handleReset">重置</n-button>
+        </n-space>
+        <n-button type="primary" @click="goCreate">
+          <template #icon>
+            <n-icon><PlusOutlined /></n-icon>
+          </template>
+          创建任务
+        </n-button>
+      </div>
+
+      <!-- 表格 -->
       <BasicTable
         :columns="columns"
         :request="loadDataTable"
         :row-key="(row) => row.id"
         ref="actionRef"
         :actionColumn="actionColumn"
-      >
-        <template #tableTitle>
-          <n-button type="primary" @click="goCreate">
-            <template #icon>
-              <n-icon>
-                <PlusOutlined />
-              </n-icon>
-            </template>
-            创建任务
-          </n-button>
-        </template>
-      </BasicTable>
+        :pagination="{ pageSize: 20 }"
+      />
     </n-card>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { reactive, ref, h } from 'vue';
-import { useMessage } from 'naive-ui';
+import { reactive, ref, h, computed, onMounted } from 'vue';
+import { useMessage, useDialog, NTag, NProgress, NButton } from 'naive-ui';
 import { useRouter } from 'vue-router';
 import { BasicTable, TableAction } from '@/components/Table';
 import { PlusOutlined } from '@vicons/antd';
-import { getTaskList, deleteTask, startTask, completeTask, type TaskExecution } from '@/api/tasks';
+import {
+  getTaskList,
+  stopTask,
+  retryTask,
+  deleteTask,
+  type TaskExecution,
+  type TaskListParams,
+} from '@/api/tasks';
+import { getBusinessLineListRaw, type BusinessLine } from '@/api/config/businessLines';
 
 const router = useRouter();
 const message = useMessage();
+const dialog = useDialog();
 const actionRef = ref();
+const businessLineList = ref<BusinessLine[]>([]);
+
+const filterParams = reactive<TaskListParams>({
+  task_type: undefined,
+  business_line_id: undefined,
+  status: undefined,
+});
+
+const taskTypeOptions = [
+  { label: '爬虫任务', value: 'scrape' },
+  { label: '私信任务', value: 'message' },
+  { label: '回复任务', value: 'reply' },
+];
+
+const statusOptions = [
+  { label: '待执行', value: 'pending' },
+  { label: '运行中', value: 'running' },
+  { label: '成功', value: 'success' },
+  { label: '失败', value: 'failed' },
+  { label: '已取消', value: 'cancelled' },
+];
+
+const businessLineOptions = computed(() =>
+  businessLineList.value.map((bl) => ({
+    label: `${bl.platform_name}-${bl.name}`,
+    value: bl.id,
+  }))
+);
+
+onMounted(async () => {
+  businessLineList.value = await getBusinessLineListRaw();
+});
+
+// 状态配置
+const statusConfig: Record<string, { label: string; type: string }> = {
+  pending: { label: '待执行', type: 'default' },
+  running: { label: '运行中', type: 'info' },
+  success: { label: '成功', type: 'success' },
+  failed: { label: '失败', type: 'error' },
+  cancelled: { label: '已取消', type: 'warning' },
+};
+
+const typeMap: Record<string, string> = {
+  scrape: '爬虫任务',
+  message: '私信任务',
+  reply: '回复任务',
+};
 
 const columns = [
+  { title: 'ID', key: 'id', width: 60 },
+  { title: '任务名称', key: 'task_name', width: 160, ellipsis: { tooltip: true } },
   {
-    title: '任务类型',
+    title: '类型',
     key: 'task_type',
-    width: 120,
+    width: 90,
     render(row: TaskExecution) {
-      const typeMap: Record<string, string> = {
-        scrape: '爬虫任务',
-        message: '私信任务',
-        analyze: '分析任务',
-      };
       return typeMap[row.task_type] || row.task_type;
     },
   },
   {
-    title: '所属业务线',
-    key: 'business_line_name',
-    width: 150,
+    title: '业务线',
+    key: 'business_line',
+    width: 140,
+    render(row: TaskExecution) {
+      return row.platform_name && row.business_line_name
+        ? `${row.platform_name}/${row.business_line_name}`
+        : '-';
+    },
   },
   {
     title: '状态',
     key: 'status',
     width: 100,
     render(row: TaskExecution) {
-      const statusMap: Record<string, string> = {
-        pending: '待执行',
-        running: '执行中',
-        completed: '已完成',
-        partial: '部分完成',
-        failed: '失败',
-      };
-      return statusMap[row.status] || row.status;
+      const cfg = statusConfig[row.status] || { label: row.status, type: 'default' };
+      return h(NTag, { type: cfg.type as any, size: 'small', round: true }, { default: () => cfg.label });
     },
   },
   {
-    title: '总数',
-    key: 'total_items',
-    width: 80,
+    title: '进度',
+    key: 'progress',
+    width: 140,
+    render(row: TaskExecution) {
+      const statusType = row.status === 'running' ? 'info' : row.status === 'success' ? 'success' : row.status === 'failed' ? 'error' : 'default';
+      return h(NProgress, {
+        type: 'line',
+        percentage: row.progress,
+        status: statusType as any,
+        showIndicator: true,
+        height: 8,
+      });
+    },
   },
   {
-    title: '成功',
-    key: 'success_items',
-    width: 80,
+    title: '成功/失败',
+    key: 'result',
+    width: 100,
+    render(row: TaskExecution) {
+      return `${row.success_items}/${row.failed_items}`;
+    },
   },
-  {
-    title: '失败',
-    key: 'failed_items',
-    width: 80,
-  },
-  {
-    title: '创建时间',
-    key: 'created_at',
-    width: 160,
-  },
+  { title: '创建时间', key: 'created_at', width: 160 },
 ];
 
 const actionColumn = reactive({
-  width: 300,
+  width: 240,
   title: '操作',
   key: 'action',
-  fixed: 'right',
+  fixed: 'right' as const,
   render(record: TaskExecution) {
     return h(TableAction, {
       style: 'button',
       actions: [
+        { label: '详情', onClick: () => handleDetail(record) },
         {
-          label: '详情',
-          onClick: handleDetail.bind(null, record),
-        },
-        {
-          label: '启动',
-          onClick: handleStart.bind(null, record),
-          ifShow: () => record.status === 'pending',
-        },
-        {
-          label: '完成',
-          onClick: handleComplete.bind(null, record),
+          label: '停止',
+          onClick: () => handleStop(record),
           ifShow: () => record.status === 'running',
         },
         {
+          label: '重试',
+          onClick: () => handleRetry(record),
+          ifShow: () => record.status === 'failed' || record.status === 'cancelled',
+        },
+        {
           label: '删除',
-          onClick: handleDelete.bind(null, record),
+          onClick: () => handleDelete(record),
+          ifShow: () => record.status !== 'running',
         },
       ],
     });
@@ -129,8 +209,24 @@ const actionColumn = reactive({
 });
 
 const loadDataTable = async (res: any) => {
-  return await getTaskList(res);
+  const params: TaskListParams = {
+    ...filterParams,
+    page: res?.page || 1,
+    page_size: res?.pageSize || 20,
+  };
+  return await getTaskList(params);
 };
+
+function handleSearch() {
+  actionRef.value?.reload();
+}
+
+function handleReset() {
+  filterParams.task_type = undefined;
+  filterParams.business_line_id = undefined;
+  filterParams.status = undefined;
+  actionRef.value?.reload();
+}
 
 function goCreate() {
   router.push('/tasks/create');
@@ -140,35 +236,57 @@ function handleDetail(record: TaskExecution) {
   router.push(`/tasks/${record.id}`);
 }
 
-async function handleStart(record: TaskExecution) {
+function handleStop(record: TaskExecution) {
+  dialog.warning({
+    title: '确认停止',
+    content: `确定要停止任务「${record.task_name || '#' + record.id}」吗？`,
+    positiveText: '确认停止',
+    negativeText: '取消',
+    onPositiveClick: async () => {
+      try {
+        await stopTask(record.id);
+        message.success('任务已停止');
+        actionRef.value?.reload();
+      } catch (error) {
+        // handled globally
+      }
+    },
+  });
+}
+
+async function handleRetry(record: TaskExecution) {
   try {
-    await startTask(record.id);
-    message.success('任务已启动');
-    actionRef.value.reload();
+    await retryTask(record.id);
+    message.success('已创建重试任务');
+    actionRef.value?.reload();
   } catch (error) {
-    message.error('启动失败');
+    // handled globally
   }
 }
 
-async function handleComplete(record: TaskExecution) {
-  try {
-    await completeTask(record.id, { success_items: record.success_items, failed_items: record.failed_items });
-    message.success('任务已完成');
-    actionRef.value.reload();
-  } catch (error) {
-    message.error('操作失败');
-  }
-}
-
-async function handleDelete(record: TaskExecution) {
-  try {
-    await deleteTask(record.id);
-    message.success('删除成功');
-    actionRef.value.reload();
-  } catch (error) {
-    message.error('删除失败');
-  }
+function handleDelete(record: TaskExecution) {
+  dialog.warning({
+    title: '确认删除',
+    content: `确定要删除任务「${record.task_name || '#' + record.id}」吗？删除后不可恢复。`,
+    positiveText: '确认删除',
+    negativeText: '取消',
+    onPositiveClick: async () => {
+      try {
+        await deleteTask(record.id);
+        message.success('删除成功');
+        actionRef.value?.reload();
+      } catch (error) {
+        // handled globally
+      }
+    },
+  });
 }
 </script>
 
-<style lang="less" scoped></style>
+<style lang="less" scoped>
+.filter-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+</style>

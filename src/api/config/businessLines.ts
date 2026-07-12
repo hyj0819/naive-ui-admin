@@ -29,15 +29,18 @@ export interface UpdateBusinessLineRequest {
 }
 
 export function getBusinessLineListRaw(params?: { platform_id?: number; status?: number }) {
-  return Alova.Get<{ code: number; message: string; result: BusinessLine[] }>('/config/business-lines', { params }).then(res => res.result || []);
+  return Alova.Get<BusinessLine[]>('/config/business-lines', { params }).then((res: any) => (res.list || res || []));
 }
 
-export function getBusinessLineList(params?: { platform_id?: number; status?: number }) {
-  return Alova.Get<{ code: number; message: string; result: BusinessLine[] }>('/config/business-lines', { params }).then(res => {
+export function getBusinessLineList(params?: { platform_id?: number; status?: number; page?: number; pageSize?: number }) {
+  return Alova.Get<BusinessLine[]>('/config/business-lines', { params }).then((res: any) => {
+    const list = res.list || res || [];
+    const total = res.total ?? list.length;
+    const pageSize = params?.pageSize ?? 10;
     return {
-      list: res.result || [],
-      pageCount: 1,
-      itemCount: (res.result || []).length,
+      list,
+      pageCount: Math.ceil(total / pageSize),
+      itemCount: total,
     };
   });
 }

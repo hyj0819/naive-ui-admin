@@ -52,14 +52,15 @@
 </template>
 
 <script lang="ts" setup>
-import { reactive, ref, h, computed, onMounted } from 'vue';
-import { useMessage } from 'naive-ui';
+import { reactive, ref, h, computed, nextTick, onMounted } from 'vue';
+import { useMessage, useDialog } from 'naive-ui';
 import { BasicTable, TableAction } from '@/components/Table';
 import { PlusOutlined } from '@vicons/antd';
-import { getBusinessLineList, getBusinessLineListRaw, createBusinessLine, updateBusinessLine, deleteBusinessLine, type BusinessLine, type CreateBusinessLineRequest, type UpdateBusinessLineRequest } from '@/api/config/businessLines';
-import { getPlatformList, getPlatformListRaw, type Platform } from '@/api/config/platforms';
+import { getBusinessLineList, createBusinessLine, updateBusinessLine, deleteBusinessLine, type BusinessLine, type CreateBusinessLineRequest, type UpdateBusinessLineRequest } from '@/api/config/businessLines';
+import { getPlatformListRaw, type Platform } from '@/api/config/platforms';
 
 const message = useMessage();
+const dialog = useDialog();
 const actionRef = ref();
 const showModal = ref(false);
 const formLoading = ref(false);
@@ -164,22 +165,32 @@ async function submitForm() {
       message.success('创建成功');
     }
     showModal.value = false;
-    actionRef.value.reload();
+    await nextTick();
+    await actionRef.value?.reload();
   } catch (error) {
-    message.error('操作失败');
+    // alova 全局处理器已展示错误信息
   } finally {
     formLoading.value = false;
   }
 }
 
-async function handleDelete(record: BusinessLine) {
-  try {
-    await deleteBusinessLine(record.id);
-    message.success('删除成功');
-    actionRef.value.reload();
-  } catch (error) {
-    message.error('删除失败');
-  }
+function handleDelete(record: BusinessLine) {
+  dialog.warning({
+    title: '确认删除',
+    content: `确定要删除业务线「${record.name}」吗？删除后不可恢复。`,
+    positiveText: '确认删除',
+    negativeText: '取消',
+    onPositiveClick: async () => {
+      try {
+        await deleteBusinessLine(record.id);
+        message.success('删除成功');
+        await nextTick();
+        await actionRef.value?.reload();
+      } catch (error) {
+        // alova 全局处理器已展示错误信息
+      }
+    },
+  });
 }
 </script>
 

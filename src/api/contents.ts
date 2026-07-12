@@ -34,16 +34,21 @@ export interface CreateContentRequest {
   source_keyword?: string;
 }
 
-export function getContentList(params?: {
+export interface ContentListParams {
+  page?: number;
+  pageSize?: number;
   platform_id?: number;
   business_line_id?: number;
   content_type?: string;
-}) {
-  return Alova.Get<{ code: number; message: string; result: Content[] }>('/contents', { params }).then(res => {
+  source_keyword?: string;
+}
+
+export function getContentList(params?: ContentListParams) {
+  return Alova.Get<any>('/contents', { params }).then(res => {
     return {
-      list: res.result || [],
-      pageCount: 1,
-      itemCount: (res.result || []).length,
+      list: res?.list || [],
+      pageCount: res?.pageCount || 0,
+      itemCount: res?.itemCount || 0,
     };
   });
 }
@@ -58,4 +63,14 @@ export function createContent(data: CreateContentRequest) {
 
 export function deleteContent(id: number) {
   return Alova.Delete(`/contents/${id}`);
+}
+
+export function getContentExportUrl(params?: { platform_id?: number; business_line_id?: number; content_type?: string; source_keyword?: string }) {
+  const searchParams = new URLSearchParams();
+  if (params?.platform_id) searchParams.append('platform_id', String(params.platform_id));
+  if (params?.business_line_id) searchParams.append('business_line_id', String(params.business_line_id));
+  if (params?.content_type) searchParams.append('content_type', params.content_type);
+  if (params?.source_keyword) searchParams.append('source_keyword', params.source_keyword);
+  const query = searchParams.toString();
+  return `http://localhost:8000/api/contents/export${query ? '?' + query : ''}`;
 }

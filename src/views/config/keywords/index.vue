@@ -52,20 +52,25 @@
 </template>
 
 <script lang="ts" setup>
-import { reactive, ref, h, onMounted } from 'vue';
-import { useMessage } from 'naive-ui';
+import { reactive, ref, h, computed, nextTick, onMounted } from 'vue';
+import { useMessage, useDialog } from 'naive-ui';
 import { BasicTable, TableAction } from '@/components/Table';
 import { PlusOutlined } from '@vicons/antd';
 import { getKeywordList, createKeyword, updateKeyword, deleteKeyword, type Keyword, type CreateKeywordRequest, type UpdateKeywordRequest } from '@/api/config/keywords';
-import { getBusinessLineList, getBusinessLineListRaw, type BusinessLine } from '@/api/config/businessLines';
+import { getBusinessLineListRaw, type BusinessLine } from '@/api/config/businessLines';
 
 const message = useMessage();
+const dialog = useDialog();
 const actionRef = ref();
 const showModal = ref(false);
 const formLoading = ref(false);
 const modalTitle = ref('新增关键词');
 const editId = ref<number | null>(null);
 const businessLineList = ref<BusinessLine[]>([]);
+
+const businessLineOptions = computed(() => {
+  return businessLineList.value.map(bl => ({ label: `${bl.platform_name}-${bl.name}`, value: bl.id }));
+});
 
 const columns = [
   {
@@ -160,22 +165,32 @@ async function submitForm() {
       message.success('创建成功');
     }
     showModal.value = false;
-    actionRef.value.reload();
+    await nextTick();
+    await actionRef.value?.reload();
   } catch (error) {
-    message.error('操作失败');
+    // alova 全局处理器已展示错误信息
   } finally {
     formLoading.value = false;
   }
 }
 
-async function handleDelete(record: Keyword) {
-  try {
-    await deleteKeyword(record.id);
-    message.success('删除成功');
-    actionRef.value.reload();
-  } catch (error) {
-    message.error('删除失败');
-  }
+function handleDelete(record: Keyword) {
+  dialog.warning({
+    title: '确认删除',
+    content: `确定要删除关键词「${record.keyword}」吗？删除后不可恢复。`,
+    positiveText: '确认删除',
+    negativeText: '取消',
+    onPositiveClick: async () => {
+      try {
+        await deleteKeyword(record.id);
+        message.success('删除成功');
+        await nextTick();
+        await actionRef.value?.reload();
+      } catch (error) {
+        // alova 全局处理器已展示错误信息
+      }
+    },
+  });
 }
 </script>
 

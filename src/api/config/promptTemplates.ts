@@ -36,12 +36,15 @@ export interface UpdatePromptTemplateRequest {
   is_active?: number;
 }
 
-export function getPromptTemplateList(params?: { business_line_id?: number; status?: number }) {
-  return Alova.Get<{ code: number; message: string; result: PromptTemplate[] }>('/config/prompt-templates', { params }).then(res => {
+export function getPromptTemplateList(params?: { business_line_id?: number; status?: number; page?: number; pageSize?: number }) {
+  return Alova.Get<PromptTemplate[]>('/config/prompt-templates', { params }).then((res: any) => {
+    const list = res.list || res || [];
+    const total = res.total ?? list.length;
+    const pageSize = params?.pageSize ?? 10;
     return {
-      list: res.result || [],
-      pageCount: 1,
-      itemCount: (res.result || []).length,
+      list,
+      pageCount: Math.ceil(total / pageSize),
+      itemCount: total,
     };
   });
 }

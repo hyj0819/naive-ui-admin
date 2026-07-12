@@ -25,15 +25,18 @@ export interface UpdatePlatformRequest {
 }
 
 export function getPlatformListRaw(params?: { status?: number }) {
-  return Alova.Get<{ code: number; message: string; result: Platform[] }>('/config/platforms', { params }).then(res => res.result || []);
+  return Alova.Get<Platform[]>('/config/platforms', { params }).then((res: any) => (res.list || res || []));
 }
 
-export function getPlatformList(params?: { status?: number }) {
-  return Alova.Get<{ code: number; message: string; result: Platform[] }>('/config/platforms', { params }).then(res => {
+export function getPlatformList(params?: { status?: number; page?: number; pageSize?: number }) {
+  return Alova.Get<Platform[]>('/config/platforms', { params }).then((res: any) => {
+    const list = res.list || res || [];
+    const total = res.total ?? list.length;
+    const pageSize = params?.pageSize ?? 10;
     return {
-      list: res.result || [],
-      pageCount: 1,
-      itemCount: (res.result || []).length,
+      list,
+      pageCount: Math.ceil(total / pageSize),
+      itemCount: total,
     };
   });
 }

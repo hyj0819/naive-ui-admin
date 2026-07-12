@@ -24,12 +24,15 @@ export interface UpdateKeywordRequest {
   status?: number;
 }
 
-export function getKeywordList(params?: { business_line_id?: number; status?: number }) {
-  return Alova.Get<{ code: number; message: string; result: Keyword[] }>('/config/keywords', { params }).then(res => {
+export function getKeywordList(params?: { business_line_id?: number; status?: number; page?: number; pageSize?: number }) {
+  return Alova.Get<Keyword[]>('/config/keywords', { params }).then((res: any) => {
+    const list = res.list || res || [];
+    const total = res.total ?? list.length;
+    const pageSize = params?.pageSize ?? 10;
     return {
-      list: res.result || [],
-      pageCount: 1,
-      itemCount: (res.result || []).length,
+      list,
+      pageCount: Math.ceil(total / pageSize),
+      itemCount: total,
     };
   });
 }

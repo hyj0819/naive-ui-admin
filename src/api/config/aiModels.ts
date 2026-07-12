@@ -9,7 +9,7 @@ export interface AIModel {
   max_tokens: number;
   temperature: number;
   top_p: number;
-  extra_params: string;
+  extra_params: string | null;
   is_active: number;
   status: number;
   description: string;
@@ -43,12 +43,15 @@ export interface UpdateAIModelRequest {
   description?: string;
 }
 
-export function getAiModelList(params?: { provider?: string; status?: number }) {
-  return Alova.Get<{ code: number; message: string; result: AIModel[] }>('/config/ai-models', { params }).then(res => {
+export function getAiModelList(params?: { provider?: string; status?: number; page?: number; pageSize?: number }) {
+  return Alova.Get<AIModel[]>('/config/ai-models', { params }).then((res: any) => {
+    const list = res.list || res || [];
+    const total = res.total ?? list.length;
+    const pageSize = params?.pageSize ?? 10;
     return {
-      list: res.result || [],
-      pageCount: 1,
-      itemCount: (res.result || []).length,
+      list,
+      pageCount: Math.ceil(total / pageSize),
+      itemCount: total,
     };
   });
 }
@@ -71,6 +74,10 @@ export function deleteAiModel(id: number) {
 
 export function activateAiModel(id: number) {
   return Alova.Post(`/config/ai-models/${id}/activate`);
+}
+
+export function deactivateAiModel(id: number) {
+  return Alova.Post(`/config/ai-models/${id}/deactivate`);
 }
 
 export function testAiModel(id: number) {

@@ -26,37 +26,111 @@
       </BasicTable>
     </n-card>
 
-    <n-modal v-model:show="showModal" :show-icon="false" preset="dialog" :title="modalTitle">
-      <n-form :model="formData" :label-width="100" class="mt-4">
+    <n-modal v-model:show="showModal" :show-icon="false" preset="dialog" :title="modalTitle" style="width: 680px;">
+      <n-form :model="formData" :label-width="90" label-placement="left">
         <n-form-item label="提供商">
-          <n-select v-model:value="formData.provider" placeholder="请选择提供商" :options="providerOptions" />
+          <n-select 
+            v-model:value="formData.provider" 
+            placeholder="请选择" 
+            :options="providerOptions" 
+            @update:value="handleProviderChange"
+            clearable
+          />
         </n-form-item>
+
         <n-form-item label="模型名称">
-          <n-input v-model:value="formData.model_name" placeholder="请输入模型名称" />
+          <n-input v-model:value="formData.model_name" placeholder="例如：deepseek-chat" />
         </n-form-item>
+
         <n-form-item label="API Key">
-          <n-input v-model:value="formData.api_key" type="password" placeholder="请输入API Key" />
+          <n-input 
+            v-model:value="formData.api_key" 
+            :type="apiKeyInputType"
+            show-password-on="click"
+            :placeholder="apiKeyPlaceholder"
+            :input-props="{ autocomplete: 'new-password' }"
+          />
         </n-form-item>
+
         <n-form-item label="基础URL">
-          <n-input v-model:value="formData.base_url" placeholder="请输入API基础地址" />
+          <n-input v-model:value="formData.base_url" placeholder="例如：https://api.deepseek.com/v1" />
         </n-form-item>
+
+        <n-divider title-placement="left" class="section-divider">
+          <n-icon size="14" class="mr-1.5 text-success">
+            <SettingOutlined />
+          </n-icon>
+          模型参数
+        </n-divider>
+
         <n-form-item label="最大Token">
-          <n-input-number v-model:value="formData.max_tokens" :min="100" :max="32000" />
+          <n-input-number v-model:value="formData.max_tokens" :min="100" :max="128000" :step="100" />
         </n-form-item>
-        <n-form-item label="温度">
-          <n-input-number v-model:value="formData.temperature" :min="0" :max="100" />
+
+        <n-form-item label="温度" :show-feedback="false">
+          <div class="slider-container">
+            <div class="slider-wrap">
+              <n-slider v-model:value="formData.temperature" :min="0" :max="100" :step="1" class="slider" />
+              <n-input-number 
+                v-model:value="formData.temperature" 
+                :min="0" 
+                :max="100" 
+                :step="1"
+                class="slider-num"
+              />
+            </div>
+            <div class="slider-hint">
+              <span class="hint-left">稳定精确</span>
+              <span class="hint-right">随机创意</span>
+            </div>
+          </div>
         </n-form-item>
-        <n-form-item label="Top P">
-          <n-input-number v-model:value="formData.top_p" :min="0" :max="100" />
+
+        <n-form-item label="Top P" :show-feedback="false">
+          <div class="slider-container">
+            <div class="slider-wrap">
+              <n-slider v-model:value="formData.top_p" :min="0" :max="100" :step="1" class="slider" />
+              <n-input-number 
+                v-model:value="formData.top_p" 
+                :min="0" 
+                :max="100" 
+                :step="1"
+                class="slider-num"
+              />
+            </div>
+            <div class="slider-hint">
+              <span class="hint-left">更确定</span>
+              <span class="hint-right">更多样</span>
+            </div>
+          </div>
         </n-form-item>
+
+        <n-divider title-placement="left" class="section-divider">
+          <n-icon size="14" class="mr-1.5 text-warning">
+            <SettingOutlined />
+          </n-icon>
+          高级配置
+          <n-tag size="small" type="warning" style="margin-left: 8px;">可选</n-tag>
+        </n-divider>
+
         <n-form-item label="描述">
-          <n-input v-model:value="formData.description" type="textarea" :rows="3" />
+          <n-input v-model:value="formData.description" type="textarea" :rows="3" placeholder="请输入模型描述..." />
         </n-form-item>
       </n-form>
       <template #action>
         <n-space>
           <n-button type="info" ghost @click="showModal = false">取消</n-button>
-          <n-button type="primary" :loading="formLoading" @click="submitForm">提交</n-button>
+          <n-button type="primary" :loading="formLoading" @click="submitForm">
+            <template #icon>
+              <n-icon v-if="editId">
+                <EditOutlined />
+              </n-icon>
+              <n-icon v-else>
+                <PlusOutlined />
+              </n-icon>
+            </template>
+            {{ editId ? '保存修改' : '创建模型' }}
+          </n-button>
         </n-space>
       </template>
     </n-modal>
@@ -64,18 +138,41 @@
 </template>
 
 <script lang="ts" setup>
-import { reactive, ref, h } from 'vue';
-import { useMessage } from 'naive-ui';
+import { reactive, ref, h, nextTick, computed } from 'vue';
+import { useMessage, useDialog } from 'naive-ui';
 import { BasicTable, TableAction } from '@/components/Table';
-import { PlusOutlined } from '@vicons/antd';
-import { getAiModelList, createAiModel, updateAiModel, deleteAiModel, activateAiModel, testAiModel, type AIModel, type CreateAIModelRequest, type UpdateAIModelRequest } from '@/api/config/aiModels';
+import { 
+  PlusOutlined, 
+  SettingOutlined, 
+  EditOutlined
+} from '@vicons/antd';
+import { getAiModelList, createAiModel, updateAiModel, deleteAiModel, activateAiModel, deactivateAiModel, testAiModel, type AIModel, type CreateAIModelRequest, type UpdateAIModelRequest } from '@/api/config/aiModels';
 
 const message = useMessage();
+const dialog = useDialog();
 const actionRef = ref();
 const showModal = ref(false);
 const formLoading = ref(false);
 const modalTitle = ref('新增模型');
 const editId = ref<number | null>(null);
+const apiKeyInputType = ref<'password' | 'text'>('password');
+const editApiKeyMasked = ref('');
+
+const apiKeyPlaceholder = computed(() => {
+  if (editId.value && editApiKeyMasked.value) {
+    return `当前: ${editApiKeyMasked.value}（留空表示不修改）`;
+  }
+  return '请输入API Key';
+});
+
+const defaultBaseUrls: Record<string, string> = {
+  deepseek: 'https://api.deepseek.com/v1',
+  openai: 'https://api.openai.com/v1',
+  anthropic: 'https://api.anthropic.com/v1',
+  gemini: 'https://generativelanguage.googleapis.com/v1',
+  ollama: 'http://localhost:11434/v1',
+  custom: '',
+};
 
 const providerOptions = [
   { label: 'DeepSeek', value: 'deepseek' },
@@ -119,6 +216,15 @@ const columns = [
     ellipsis: true,
   },
   {
+    title: '描述',
+    key: 'description',
+    ellipsis: true,
+    width: 200,
+    render(row: AIModel) {
+      return row.description || '-';
+    },
+  },
+  {
     title: '状态',
     key: 'is_active',
     width: 100,
@@ -148,6 +254,11 @@ const actionColumn = reactive({
           ifShow: () => !record.is_active,
         },
         {
+          label: '取消激活',
+          onClick: handleDeactivate.bind(null, record),
+          ifShow: () => !!record.is_active,
+        },
+        {
           label: '测试连接',
           onClick: handleTest.bind(null, record),
         },
@@ -175,13 +286,33 @@ const formData = reactive<CreateAIModelRequest & UpdateAIModelRequest>({
   description: '',
 });
 
+function handleProviderChange(provider: string) {
+  if (provider && defaultBaseUrls[provider]) {
+    formData.base_url = defaultBaseUrls[provider];
+  } else {
+    formData.base_url = '';
+  }
+}
+
+/** 清理 base_url 中的反引号 */
+function cleanBaseUrl(url: string): string {
+  return url ? url.replace(/`/g, '').trim() : url;
+}
+
 const loadDataTable = async (res: any) => {
-  return await getAiModelList(res);
+  const result = await getAiModelList(res);
+  result.list = result.list.map((item: AIModel) => ({
+    ...item,
+    base_url: item.base_url ? item.base_url.trim().replace(/^`|`$/g, '') : '',
+  }));
+  return result;
 };
 
 function addModel() {
   editId.value = null;
   modalTitle.value = '新增模型';
+  apiKeyInputType.value = 'password';
+  editApiKeyMasked.value = '';
   Object.assign(formData, {
     provider: '',
     model_name: '',
@@ -198,6 +329,8 @@ function addModel() {
 function handleEdit(record: AIModel) {
   editId.value = record.id;
   modalTitle.value = '编辑模型';
+  apiKeyInputType.value = 'password';
+  editApiKeyMasked.value = record.api_key_masked || '';
   Object.assign(formData, {
     provider: record.provider,
     model_name: record.model_name,
@@ -212,41 +345,74 @@ function handleEdit(record: AIModel) {
 }
 
 async function submitForm() {
+  // 提交前切换为text类型，避免浏览器弹出保存密码提示
+  apiKeyInputType.value = 'text';
+  await nextTick();
   formLoading.value = true;
   try {
+    // 清理 base_url 中的反引号
+    const submitData: Record<string, any> = { ...formData };
+    submitData.base_url = cleanBaseUrl(submitData.base_url);
+
     if (editId.value) {
-      await updateAiModel(editId.value, formData);
+      if (!submitData.api_key) {
+        delete submitData.api_key;
+      }
+      await updateAiModel(editId.value, submitData as any);
       message.success('更新成功');
     } else {
-      await createAiModel(formData as CreateAIModelRequest);
+      await createAiModel(submitData as CreateAIModelRequest);
       message.success('创建成功');
     }
     showModal.value = false;
-    actionRef.value.reload();
-  } catch (error) {
-    message.error('操作失败');
+    await nextTick();
+    await actionRef.value?.reload();
+  } catch (error: any) {
+    // alova 全局处理器已展示错误信息，此处无需重复提示
   } finally {
     formLoading.value = false;
+    apiKeyInputType.value = 'password';
   }
 }
 
-async function handleDelete(record: AIModel) {
-  try {
-    await deleteAiModel(record.id);
-    message.success('删除成功');
-    actionRef.value.reload();
-  } catch (error) {
-    message.error('删除失败');
-  }
+function handleDelete(record: AIModel) {
+  dialog.warning({
+    title: '确认删除',
+    content: `确定要删除模型「${record.provider} / ${record.model_name}」吗？删除后不可恢复。`,
+    positiveText: '确认删除',
+    negativeText: '取消',
+    onPositiveClick: async () => {
+      try {
+        await deleteAiModel(record.id);
+        message.success('删除成功');
+        await nextTick();
+        await actionRef.value?.reload();
+      } catch (error) {
+        // alova 全局处理器已展示错误信息
+      }
+    },
+  });
 }
 
 async function handleActivate(record: AIModel) {
   try {
     await activateAiModel(record.id);
     message.success('激活成功');
-    actionRef.value.reload();
+    await nextTick();
+    await actionRef.value?.reload();
   } catch (error) {
-    message.error('激活失败');
+    // alova 全局处理器已展示错误信息
+  }
+}
+
+async function handleDeactivate(record: AIModel) {
+  try {
+    await deactivateAiModel(record.id);
+    message.success('已取消激活');
+    await nextTick();
+    await actionRef.value?.reload();
+  } catch (error) {
+    // alova 全局处理器已展示错误信息
   }
 }
 
@@ -255,9 +421,48 @@ async function handleTest(record: AIModel) {
     await testAiModel(record.id);
     message.success('测试成功');
   } catch (error) {
-    message.error('测试失败');
+    // alova 全局处理器已展示错误信息
   }
 }
 </script>
 
-<style lang="less" scoped></style>
+<style lang="less" scoped>
+.section-divider {
+  margin: 12px 0;
+}
+
+.slider-container {
+  width: 100%;
+}
+
+.slider-wrap {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+}
+
+.slider-wrap .slider {
+  flex: 1;
+  min-width: 80px;
+}
+
+.slider-wrap .slider-num {
+  width: 80px;
+  flex-shrink: 0;
+}
+
+.slider-hint {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  padding: 0 2px;
+  line-height: 1.2;
+}
+
+.slider-hint .hint-left,
+.slider-hint .hint-right {
+  font-size: 12px;
+  color: #999;
+}
+</style>

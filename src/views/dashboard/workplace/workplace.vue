@@ -18,15 +18,15 @@
             <div class="flex justify-end w-full">
               <div class="flex flex-col justify-center flex-1 text-right">
                 <span class="text-secondary">总用户</span>
-                <span class="text-2xl">{{ overviewStats.contacts.total }}</span>
+                <span class="text-2xl">{{ overviewStats.total_contacts }}</span>
               </div>
               <div class="flex flex-col justify-center flex-1 text-right">
                 <span class="text-secondary">总内容</span>
-                <span class="text-2xl">{{ overviewStats.contents.total }}</span>
+                <span class="text-2xl">{{ overviewStats.total_contents }}</span>
               </div>
               <div class="flex flex-col justify-center flex-1 text-right">
-                <span class="text-secondary">活跃模型</span>
-                <span class="text-2xl">{{ overviewStats.ai_models.active }}</span>
+                <span class="text-secondary">运行中任务</span>
+                <span class="text-2xl">{{ overviewStats.running_tasks }}</span>
               </div>
             </div>
           </n-gi>
@@ -37,14 +37,11 @@
       <n-gi>
         <n-card :bordered="false" size="small" title="数据概览">
           <div class="grid grid-cols-2 gap-4">
-            <n-statistic label="平台数量" :value="overviewStats.platforms.total" />
-            <n-statistic label="业务线数量" :value="overviewStats.business_lines.total" />
-            <n-statistic label="关键词数量" :value="overviewStats.keywords.total" />
-            <n-statistic label="触达用户" :value="overviewStats.contacts.total" />
-            <n-statistic label="内容数据" :value="overviewStats.contents.total" />
-            <n-statistic label="活跃模型" :value="overviewStats.ai_models.active" />
-            <n-statistic label="运行中任务" :value="overviewStats.tasks.running" />
-            <n-statistic label="已完成任务" :value="overviewStats.tasks.completed" />
+            <n-statistic label="总采集内容" :value="overviewStats.total_contents" />
+            <n-statistic label="总触达用户" :value="overviewStats.total_contacts" />
+            <n-statistic label="已联系" :value="overviewStats.contacted" />
+            <n-statistic label="已转化" :value="overviewStats.converted" />
+            <n-statistic label="运行中任务" :value="overviewStats.running_tasks" />
           </div>
         </n-card>
 
@@ -64,16 +61,16 @@
       <n-gi>
         <n-card :bordered="false" size="small" title="用户触达状态">
           <div class="space-y-3">
-            <n-progress type="line" :percentage="overviewStats.contacts.contact_rate" status="success">
-              <template #indicator-text>触达率: {{ overviewStats.contacts.contact_rate }}%</template>
+            <n-progress type="line" :percentage="overviewStats.contact_rate" status="success">
+              <template #indicator-text>触达率: {{ overviewStats.contact_rate }}%</template>
             </n-progress>
             <div class="flex justify-between text-sm">
-              <span>待触达</span>
-              <span class="text-gray-500">{{ overviewStats.contacts.pending }}</span>
+              <span>已联系</span>
+              <span class="text-gray-500">{{ overviewStats.contacted }}</span>
             </div>
             <div class="flex justify-between text-sm">
-              <span>已触达</span>
-              <span class="text-gray-500">{{ overviewStats.contacts.contacted }}</span>
+              <span>已转化</span>
+              <span class="text-gray-500">{{ overviewStats.converted }}</span>
             </div>
           </div>
         </n-card>
@@ -104,13 +101,15 @@
   import { getOverviewStats, getRecentTasks, getTopKeywords, type OverviewStats, type RecentTask, type TopKeyword } from '@/api/stats';
 
   const overviewStats = reactive<OverviewStats>({
-    platforms: { total: 0 },
-    business_lines: { total: 0 },
-    keywords: { total: 0 },
-    contacts: { total: 0, contacted: 0, pending: 0, contact_rate: 0 },
-    contents: { total: 0 },
-    ai_models: { active: 0 },
-    tasks: { running: 0, completed: 0 },
+    total_contents: 0,
+    total_contacts: 0,
+    contacted: 0,
+    converted: 0,
+    ai_passed: 0,
+    messaged: 0,
+    conversion_rate: 0,
+    contact_rate: 0,
+    running_tasks: 0,
   });
 
   const recentTasks = ref<RecentTask[]>([]);
@@ -142,15 +141,15 @@
     return statusMap[status] || status;
   }
 
-  function getTaskStatusType(status: string) {
-    const typeMap: Record<string, string> = {
+  function getTaskStatusType(status: string): 'warning' | 'info' | 'success' | 'error' {
+    const typeMap: Record<string, 'warning' | 'info' | 'success' | 'error'> = {
       pending: 'warning',
       running: 'info',
       completed: 'success',
       partial: 'info',
       failed: 'error',
     };
-    return typeMap[status] || 'default';
+    return typeMap[status] || 'info';
   }
 
   onMounted(async () => {
