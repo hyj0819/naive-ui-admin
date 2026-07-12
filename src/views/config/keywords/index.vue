@@ -32,7 +32,7 @@
           <n-select v-model:value="formData.business_line_id" placeholder="请选择业务线" :options="businessLineOptions" />
         </n-form-item>
         <n-form-item label="关键词">
-          <n-input v-model:value="formData.keyword" placeholder="请输入关键词" />
+          <n-input v-model:value="formData.keywordsText" type="textarea" placeholder="每行一个关键词，也可用逗号分隔" :rows="5" />
         </n-form-item>
         <n-form-item label="优先级">
           <n-input-number v-model:value="formData.priority" :min="0" :max="100" />
@@ -56,7 +56,7 @@ import { reactive, ref, h, computed, nextTick, onMounted } from 'vue';
 import { useMessage, useDialog } from 'naive-ui';
 import { BasicTable, TableAction } from '@/components/Table';
 import { PlusOutlined } from '@vicons/antd';
-import { getKeywordList, createKeyword, updateKeyword, deleteKeyword, type Keyword, type CreateKeywordRequest, type UpdateKeywordRequest } from '@/api/config/keywords';
+import { getKeywordList, createKeyword, batchCreateKeywords, updateKeyword, deleteKeyword, type Keyword, type CreateKeywordRequest, type UpdateKeywordRequest } from '@/api/config/keywords';
 import { getBusinessLineListRaw, type BusinessLine } from '@/api/config/businessLines';
 
 const message = useMessage();
@@ -125,9 +125,10 @@ const actionColumn = reactive({
   },
 });
 
-const formData = reactive<CreateKeywordRequest & UpdateKeywordRequest>({
+const formData = reactive({
   business_line_id: 0,
   keyword: '',
+  keywordsText: '',
   priority: 0,
   status: 1,
 });
@@ -143,14 +144,14 @@ onMounted(async () => {
 function addKeyword() {
   editId.value = null;
   modalTitle.value = '新增关键词';
-  Object.assign(formData, { business_line_id: 0, keyword: '', priority: 0, status: 1 });
+  Object.assign(formData, { business_line_id: 0, keyword: '', keywordsText: '', priority: 0, status: 1 });
   showModal.value = true;
 }
 
 function handleEdit(record: Keyword) {
   editId.value = record.id;
   modalTitle.value = '编辑关键词';
-  Object.assign(formData, { business_line_id: record.business_line_id, keyword: record.keyword, priority: record.priority, status: record.status });
+  Object.assign(formData, { business_line_id: record.business_line_id, keyword: record.keyword, keywordsText: '', priority: record.priority, status: record.status });
   showModal.value = true;
 }
 
@@ -158,11 +159,33 @@ async function submitForm() {
   formLoading.value = true;
   try {
     if (editId.value) {
-      await updateKeyword(editId.value, formData);
+      // 编辑模式：单条更新
+      await updateKeyword(editId.value, { keyword: formData.keyword, priority: formData.priority, status: formData.status });
       message.success('更新成功');
     } else {
-      await createKeyword(formData as CreateKeywordRequest);
-      message.success('创建成功');
+      // 新增模式：批量创建
+      const keywords = formData.keywordsText
+        .split(/[\n,，]+/)
+        .map(k => k.trim())
+        .filter(k => k.length > 0);
+      // 去重
+      const uniqueKeywords = [...new Set(keywords)];
+      if (uniqueKeywords.length === 0) {
+        message.warning('请输入至少一个关键词');
+        formLoading.value = false;
+        return;
+      }
+      const result = await batchCreateKeywords({
+        business_line_id: formData.business_line_id,
+        keywords: uniqueKeywords,
+        priority: formData.priority,
+        status: formData.status,
+      });
+      let msg = `成功新增 ${result.created_count} 个关键词`;
+      if (result.skipped && result.skipped.length > 0) {
+        msg += `，${result.skipped.length} 个重复已跳过`;
+      }
+      message.success(msg);
     }
     showModal.value = false;
     await nextTick();

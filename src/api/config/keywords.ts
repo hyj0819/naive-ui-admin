@@ -17,6 +17,19 @@ export interface CreateKeywordRequest {
   status?: number;
 }
 
+export interface BatchCreateKeywordRequest {
+  business_line_id: number;
+  keywords: string[];
+  priority?: number;
+  status?: number;
+}
+
+export interface BatchCreateKeywordResult {
+  created_count: number;
+  created: string[];
+  skipped: string[];
+}
+
 export interface UpdateKeywordRequest {
   business_line_id?: number;
   keyword?: string;
@@ -42,11 +55,15 @@ export function getKeyword(id: number) {
 }
 
 export function createKeyword(data: CreateKeywordRequest) {
-  return Alova.Post<Keyword>('/config/keywords', { data });
+  return Alova.Post<Keyword>('/config/keywords', data);
+}
+
+export function batchCreateKeywords(data: BatchCreateKeywordRequest) {
+  return Alova.Post<BatchCreateKeywordResult>('/config/keywords/batch', data);
 }
 
 export function updateKeyword(id: number, data: UpdateKeywordRequest) {
-  return Alova.Put<Keyword>(`/config/keywords/${id}`, { data });
+  return Alova.Put<Keyword>(`/config/keywords/${id}`, data);
 }
 
 export function deleteKeyword(id: number) {
