@@ -50,11 +50,11 @@ export function getBusinessLine(id: number) {
 }
 
 export function createBusinessLine(data: CreateBusinessLineRequest) {
-  return Alova.Post<BusinessLine>('/config/business-lines', { data });
+  return Alova.Post<BusinessLine>('/config/business-lines', data);
 }
 
 export function updateBusinessLine(id: number, data: UpdateBusinessLineRequest) {
-  return Alova.Put<BusinessLine>(`/config/business-lines/${id}`, { data });
+  return Alova.Put<BusinessLine>(`/config/business-lines/${id}`, data);
 }
 
 export function deleteBusinessLine(id: number) {
