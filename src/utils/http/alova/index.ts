@@ -71,6 +71,25 @@ export const Alova = createAlova({
   },
   responded: {
     onSuccess: async (response, method) => {
+      // Fetch API 不会对 4xx/5xx 抛错，需手动检测 HTTP 错误状态码
+      if (response.status && response.status >= 400) {
+        // @ts-ignore
+        const Message = window.$message;
+        let errorMsg = `请求失败(${response.status})`;
+        try {
+          const body = await response.json();
+          if (Array.isArray(body.detail)) {
+            errorMsg = body.detail.map((e: any) => e.msg || e.message).join('; ');
+          } else if (typeof body.detail === 'string') {
+            errorMsg = body.detail;
+          } else if (body.message) {
+            errorMsg = body.message;
+          }
+        } catch { /* 解析失败使用默认提示 */ }
+        Message?.error(errorMsg);
+        throw new Error(errorMsg);
+      }
+
       const res = (response.json && (await response.json())) || response.body;
 
       // 是否返回原生响应头 比如：需要获取响应头时使用该属性
@@ -79,18 +98,18 @@ export const Alova = createAlova({
       }
       // 请根据自身情况修改数据结构
       const { message, code, result } = res;
-
+  
       // 不进行任何处理，直接返回
-      // 用于需要直接获取 code、result、 message 这些信息时开启
+      // 用于需要直接获取 code、result, message 这些信息时开启
       if (method.meta?.isTransformResponse === false) {
         return res.data;
       }
-
+  
       // @ts-ignore
       const Message = window.$message;
       // @ts-ignore
       const Modal = window.$dialog;
-
+  
       const LoginPath = PageEnum.BASE_LOGIN;
       if (ResultEnum.SUCCESS === code) {
         return result;
@@ -113,6 +132,32 @@ export const Alova = createAlova({
         Message?.error(message);
         throw new Error(message);
       }
+    },
+    onError: async (error, method) => {
+      // @ts-ignore
+      const Message = window.$message;
+      let errorMsg = '请求失败';
+      try {
+        // 尝试从响应体中解析后端返回的错误信息
+        const response = error.response || error;
+        if (response && typeof response.json === 'function') {
+          const body = await response.json();
+          // FastAPI 422 校验错误格式: { detail: [{ msg, loc, ... }] }
+          if (Array.isArray(body.detail)) {
+            errorMsg = body.detail.map((e: any) => e.msg || e.message).join('; ');
+          } else if (typeof body.detail === 'string') {
+            errorMsg = body.detail;
+          } else if (body.message) {
+            errorMsg = body.message;
+          }
+        } else if (typeof error.message === 'string') {
+          errorMsg = error.message;
+        }
+      } catch {
+        // 解析失败使用默认提示
+      }
+      Message?.error(errorMsg);
+      throw error;
     },
   },
 });
