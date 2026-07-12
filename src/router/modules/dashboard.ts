@@ -10,7 +10,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/dashboard',
     name: routeName,
-    redirect: '/config/ai-models',
+    redirect: '/config/platforms',
     component: Layout,
     meta: {
       title: 'Dashboard',

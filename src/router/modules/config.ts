@@ -8,27 +8,19 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/config',
     name: 'Config',
-    redirect: '/config/ai-models',
+    redirect: '/config/platforms',
     component: Layout,
     meta: {
       title: '配置中心',
       icon: renderIcon(SettingOutlined),
-      sort: 1, // 排序第一，显示在菜单最前面
+      sort: 3,
     },
     children: [
-      {
-        path: 'ai-models',
-        name: 'config_ai_models',
-        meta: {
-          title: 'AI模型管理',
-        },
-        component: () => import('@/views/config/ai-models/index.vue'),
-      },
       {
         path: 'platforms',
         name: 'config_platforms',
         meta: {
-          title: '平台配置',
+          title: '平台管理',
         },
         component: () => import('@/views/config/platforms/index.vue'),
       },
@@ -36,7 +28,7 @@ const routes: Array<RouteRecordRaw> = [
         path: 'business-lines',
         name: 'config_business_lines',
         meta: {
-          title: '业务线配置',
+          title: '业务线管理',
         },
         component: () => import('@/views/config/business-lines/index.vue'),
       },
@@ -55,6 +47,14 @@ const routes: Array<RouteRecordRaw> = [
           title: '提示词管理',
         },
         component: () => import('@/views/config/prompt-templates/index.vue'),
+      },
+      {
+        path: 'ai-models',
+        name: 'config_ai_models',
+        meta: {
+          title: 'AI模型配置',
+        },
+        component: () => import('@/views/config/ai-models/index.vue'),
       },
     ],
   },
