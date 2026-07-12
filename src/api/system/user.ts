@@ -4,7 +4,7 @@ import { Alova } from '@/utils/http/alova/index';
  * @description: 获取用户信息
  */
 export function getUserInfo() {
-  return Alova.Get<InResult>('/admin_info', {
+  return Alova.Get<any>('/auth/info', {
     meta: {
       isReturnNativeResponse: true,
     },
@@ -14,12 +14,10 @@ export function getUserInfo() {
 /**
  * @description: 用户登录
  */
-export function login(params) {
-  return Alova.Post<InResult>(
-    '/login',
-    {
-      params,
-    },
+export function login(params: { username: string; password: string }) {
+  return Alova.Post<any>(
+    '/auth/login',
+    params,
     {
       meta: {
         isReturnNativeResponse: true,
@@ -29,17 +27,8 @@ export function login(params) {
 }
 
 /**
- * @description: 用户修改密码
- */
-export function changePassword(params, uid) {
-  return Alova.Post(`/user/u${uid}/changepw`, { params });
-}
-
-/**
  * @description: 用户登出
  */
-export function logout(params) {
-  return Alova.Post('/login/logout', {
-    params,
-  });
+export function logout() {
+  return Alova.Post('/auth/logout');
 }

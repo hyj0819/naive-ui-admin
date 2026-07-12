@@ -7,9 +7,12 @@ import { getUserInfo as getUserInfoApi, login } from '@/api/system/user';
 import { storage } from '@/utils/Storage';
 
 export type UserInfoType = {
-  // TODO: add your own data
+  id?: number;
   username: string;
+  real_name?: string;
   email: string;
+  avatar?: string;
+  roles?: any[];
 };
 
 export interface IUserState {
@@ -17,7 +20,8 @@ export interface IUserState {
   username: string;
   welcome: string;
   avatar: string;
-  permissions: any[];
+  permissions: string[];
+  menus: string[];
   info: UserInfoType;
 }
 
@@ -29,6 +33,7 @@ export const useUserStore = defineStore({
     welcome: '',
     avatar: '',
     permissions: [],
+    menus: [],
     info: storage.get(CURRENT_USER, {}),
   }),
   getters: {
@@ -41,8 +46,11 @@ export const useUserStore = defineStore({
     getNickname(): string {
       return this.username;
     },
-    getPermissions(): [any][] {
+    getPermissions(): string[] {
       return this.permissions;
+    },
+    getMenus(): string[] {
+      return this.menus;
     },
     getUserInfo(): UserInfoType {
       return this.info;
@@ -55,8 +63,11 @@ export const useUserStore = defineStore({
     setAvatar(avatar: string) {
       this.avatar = avatar;
     },
-    setPermissions(permissions) {
+    setPermissions(permissions: string[]) {
       this.permissions = permissions;
+    },
+    setMenus(menus: string[]) {
+      this.menus = menus;
     },
     setUserInfo(info: UserInfoType) {
       this.info = info;
@@ -66,12 +77,20 @@ export const useUserStore = defineStore({
       const response = await login(params);
       const { result, code } = response;
       if (code === ResultEnum.SUCCESS) {
+        const accessToken = result.access_token;
         const ex = 7 * 24 * 60 * 60;
-        storage.set(ACCESS_TOKEN, result.token, ex);
-        storage.set(CURRENT_USER, result, ex);
+        storage.set(ACCESS_TOKEN, accessToken, ex);
+        storage.set(CURRENT_USER, result.user, ex);
         storage.set(IS_SCREENLOCKED, false);
-        this.setToken(result.token);
-        this.setUserInfo(result);
+        this.setToken(accessToken);
+        this.setUserInfo(result.user);
+        // 存储权限和菜单
+        if (result.user?.menus) {
+          this.setMenus(result.user.menus);
+        }
+        if (result.user?.roles) {
+          this.setPermissions(result.user.roles.map((r: any) => r.role_code));
+        }
       }
       return response;
     },
@@ -82,28 +101,27 @@ export const useUserStore = defineStore({
         const data = await getUserInfoApi();
         const { result } = data;
         if (result) {
-          // 如果有 permissions 字段则设置
-          if (result.permissions && result.permissions.length) {
-            this.setPermissions(result.permissions);
-          } else {
-            // 后端没有返回 permissions，使用默认权限
-            this.setPermissions([]); // 不需要权限验证
+          if (result.menus && result.menus.length) {
+            this.setMenus(result.menus);
+          }
+          if (result.roles && result.roles.length) {
+            this.setPermissions(result.roles.map((r: any) => r.role_code));
           }
           this.setUserInfo(result);
           this.setAvatar(result.avatar || '');
           return result;
         }
       } catch (error) {
-        // 接口调用失败时使用默认用户信息
-        console.warn('获取用户信息失败，使用默认信息:', error);
+        console.warn('获取用户信息失败:', error);
       }
-      // 返回默认用户信息
       const defaultInfo = {
         username: 'admin',
         email: 'admin@example.com',
-        permissions: [], // 不需要权限验证
+        permissions: [] as string[],
+        menus: [] as string[],
       };
       this.setPermissions(defaultInfo.permissions);
+      this.setMenus(defaultInfo.menus);
       this.setUserInfo({ username: defaultInfo.username, email: defaultInfo.email });
       return defaultInfo;
     },
@@ -111,6 +129,7 @@ export const useUserStore = defineStore({
     // 登出
     async logout() {
       this.setPermissions([]);
+      this.setMenus([]);
       this.setUserInfo({ username: '', email: '' });
       storage.remove(ACCESS_TOKEN);
       storage.remove(CURRENT_USER);
