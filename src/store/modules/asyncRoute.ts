@@ -88,16 +88,19 @@ export const useAsyncRouteStore = defineStore({
     },
     async generateRoutes(data) {
       let accessedRouters;
-      const permissionsList = data.permissions ?? [];
+      // 使用后端返回的 menu_keys（用户所有角色合并后的菜单权限）来过滤路由
+      const menuKeys: string[] = data.menus ?? [];
       const routeFilter = (route) => {
-        const { meta } = route;
-        const { permissions } = meta || {};
-        // 如果路由没有定义权限要求，则允许访问
-        if (!permissions) return true;
-        // 如果用户权限列表为空，则允许所有路由（超级管理员模式）
-        if (permissionsList.length === 0) return true;
-        // 否则检查用户是否拥有所需权限
-        return permissionsList.some((item) => permissions.includes(item.value || item));
+        const { meta, name } = route;
+        // dashboard 路由（隐藏菜单，仅用于首页重定向）始终保留
+        if (name === 'dashboard' || name === 'dashboard_console' || name === 'dashboard_workplace') return true;
+        // 如果用户 menu_keys 为空，说明没有任何菜单权限，过滤掉所有业务路由
+        if (menuKeys.length === 0) return false;
+        // 如果路由 name 在 menu_keys 中，允许访问
+        if (name && menuKeys.includes(name)) return true;
+        // 父级路由（如 Tasks、Config）不在 menu_keys 中，
+        // 但其子路由可能匹配，由 filter() 的递归逻辑保留
+        return false;
       };
       const { permissionMode } = useProjectSetting();
       if (unref(permissionMode) === 'BACK') {
@@ -115,7 +118,6 @@ export const useAsyncRouteStore = defineStore({
           console.log(error);
         }
       }
-      accessedRouters = accessedRouters.filter(routeFilter);
       this.setRouters(accessedRouters);
       this.setMenus(accessedRouters);
       return toRaw(accessedRouters);
