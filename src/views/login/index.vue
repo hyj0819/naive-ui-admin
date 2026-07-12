@@ -243,6 +243,7 @@
       background: rgba(255, 255, 255, 0.95);
       border: 1px solid rgba(255, 255, 255, 0.18);
       transition: all 0.3s ease;
+      color: #333;
       
       &:hover {
         box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
@@ -322,7 +323,11 @@
     .default-color {
       color: #515a6e;
 
-      .ant-checkbox-wrapper {
+      :deep(.n-checkbox) {
+        color: #515a6e;
+      }
+
+      :deep(.n-checkbox__label) {
         color: #515a6e;
       }
     }
@@ -442,6 +447,15 @@
       
       :deep(.n-input) {
         border-radius: 4px;
+      }
+
+      :deep(.n-input__input-el),
+      :deep(.n-input-wrapper) {
+        color: #333 !important;
+      }
+
+      :deep(.n-input__placeholder) {
+        color: #999 !important;
       }
       
       padding: 0;
