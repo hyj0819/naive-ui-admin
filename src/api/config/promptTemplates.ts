@@ -54,11 +54,11 @@ export function getPromptTemplate(id: number) {
 }
 
 export function createPromptTemplate(data: CreatePromptTemplateRequest) {
-  return Alova.Post<PromptTemplate>('/config/prompt-templates', { data });
+  return Alova.Post<PromptTemplate>('/config/prompt-templates', data);
 }
 
 export function updatePromptTemplate(id: number, data: UpdatePromptTemplateRequest) {
-  return Alova.Put<PromptTemplate>(`/config/prompt-templates/${id}`, { data });
+  return Alova.Put<PromptTemplate>(`/config/prompt-templates/${id}`, data);
 }
 
 export function deletePromptTemplate(id: number) {
