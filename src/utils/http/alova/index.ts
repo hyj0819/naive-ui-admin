@@ -40,7 +40,7 @@ export const Alova = createAlova({
   baseURL: apiUrl,
   statesHook: VueHook,
   // 关闭全局请求缓存
-  // cacheFor: null,
+  cacheFor: null,
   // 全局缓存配置
   // cacheFor: {
   //   POST: {
@@ -59,17 +59,14 @@ export const Alova = createAlova({
   beforeRequest(method) {
     const userStore = useUser();
     const token = userStore.getToken;
-    // 添加 token 到请求头
+    // 添加 token 到请求头 (JWT Bearer)
     if (!method.meta?.ignoreToken && token) {
-      method.config.headers['token'] = token;
+      method.config.headers['Authorization'] = `Bearer ${token}`;
     }
     // 处理 api 请求前缀
     const isUrlStr = isUrl(method.url as string);
     if (!isUrlStr && urlPrefix) {
       method.url = `${urlPrefix}${method.url}`;
-    }
-    if (!isUrlStr && apiUrl && isString(apiUrl)) {
-      method.url = `${apiUrl}${method.url}`;
     }
   },
   responded: {
