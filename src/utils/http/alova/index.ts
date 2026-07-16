@@ -5,6 +5,7 @@ import { createAlovaMockAdapter } from '@alova/mock';
 import { isString } from 'lodash-es';
 import mocks from './mocks';
 import { useUser } from '@/store/modules/user';
+import { ACCESS_TOKEN } from '@/store/mutation-types';
 import { storage } from '@/utils/Storage';
 import { useGlobSetting, useLocalSetting } from '@/hooks/setting';
 import { PageEnum } from '@/enums/pageEnum';
@@ -73,6 +74,16 @@ export const Alova = createAlova({
     onSuccess: async (response, method) => {
       // Fetch API 不会对 4xx/5xx 抛错，需手动检测 HTTP 错误状态码
       if (response.status && response.status >= 400) {
+        // 401 未授权：清除登录态，跳转登录页（不弹错误提示）
+        if (response.status === 401) {
+          storage.remove(ACCESS_TOKEN);
+          const userStore = useUser();
+          userStore.setPermissions([]);
+          userStore.setMenus([]);
+          userStore.setUserInfo({ username: '', email: '' });
+          window.location.href = PageEnum.BASE_LOGIN;
+          throw new Error('登录已失效，请重新登录');
+        }
         // @ts-ignore
         const Message = window.$message;
         let errorMsg = `请求失败(${response.status})`;

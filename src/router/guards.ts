@@ -29,13 +29,7 @@ export function createRouterGuards(router: Router) {
       return;
     }
 
-    let token = storage.get(ACCESS_TOKEN);
-
-    // 开发模式下自动设置默认token，绕过登录
-    if (!token && process.env.NODE_ENV === 'development') {
-      token = 'dev_token';
-      storage.set(ACCESS_TOKEN, token, 7 * 24 * 60 * 60);
-    }
+    const token = storage.get(ACCESS_TOKEN);
 
     if (!token) {
       // You can access without permissions. You need to set the routing meta.ignoreAuth to true
@@ -63,26 +57,34 @@ export function createRouterGuards(router: Router) {
       return;
     }
 
-    const userInfo = await userStore.getInfo();
+    try {
+      const userInfo = await userStore.getInfo();
 
-    const routes = await asyncRouteStore.generateRoutes(userInfo);
+      const routes = await asyncRouteStore.generateRoutes(userInfo);
 
-    // 动态添加可访问路由表
-    routes.forEach((item) => {
-      router.addRoute(item as unknown as RouteRecordRaw);
-    });
+      // 动态添加可访问路由表
+      routes.forEach((item) => {
+        router.addRoute(item as unknown as RouteRecordRaw);
+      });
 
-    //添加404
-    const isErrorPage = router.getRoutes().findIndex((item) => item.name === ErrorPageRoute.name);
-    if (isErrorPage === -1) {
-      router.addRoute(ErrorPageRoute as unknown as RouteRecordRaw);
+      //添加404
+      const isErrorPage = router.getRoutes().findIndex((item) => item.name === ErrorPageRoute.name);
+      if (isErrorPage === -1) {
+        router.addRoute(ErrorPageRoute as unknown as RouteRecordRaw);
+      }
+
+      const redirectPath = (from.query.redirect || to.path) as string;
+      const redirect = decodeURIComponent(redirectPath);
+      const nextData = to.path === redirect ? { ...to, replace: true } : { path: redirect };
+      asyncRouteStore.setDynamicRouteAdded(true);
+      next(nextData);
+    } catch (error) {
+      // 获取用户信息失败（如 token 过期/无效），清除登录态并跳转登录页
+      console.error('获取用户信息失败:', error);
+      storage.remove(ACCESS_TOKEN);
+      asyncRouteStore.setDynamicRouteAdded(false);
+      next({ path: LOGIN_PATH, replace: true, query: { redirect: to.path } });
     }
-
-    const redirectPath = (from.query.redirect || to.path) as string;
-    const redirect = decodeURIComponent(redirectPath);
-    const nextData = to.path === redirect ? { ...to, replace: true } : { path: redirect };
-    asyncRouteStore.setDynamicRouteAdded(true);
-    next(nextData);
     Loading && Loading.finish();
   });
 

@@ -15,7 +15,7 @@
     <div class="view-account-container animate__animated animate__fadeInDown">
       <div class="view-account-top">
         <div class="view-account-top-logo">
-          <img :src="websiteConfig.loginImage" alt="" />
+          <span class="logo-text">截流获客</span>
         </div>
         <div class="view-account-top-desc">{{ websiteConfig.loginDesc }}</div>
       </div>
@@ -303,8 +303,11 @@
         display: flex;
         justify-content: center;
         
-        img {
-          height: 60px;
+        .logo-text {
+          font-size: 28px;
+          font-weight: 700;
+          color: #2d8cf0;
+          letter-spacing: 4px;
         }
       }
 

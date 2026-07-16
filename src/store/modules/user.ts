@@ -97,33 +97,19 @@ export const useUserStore = defineStore({
 
     // 获取用户信息
     async getInfo() {
-      try {
-        const data = await getUserInfoApi();
-        const { result } = data;
-        if (result) {
-          if (result.menus && result.menus.length) {
-            this.setMenus(result.menus);
-          }
-          if (result.roles && result.roles.length) {
-            this.setPermissions(result.roles.map((r: any) => r.role_code));
-          }
-          this.setUserInfo(result);
-          this.setAvatar(result.avatar || '');
-          return result;
+      const data = await getUserInfoApi();
+      const { result } = data;
+      if (result) {
+        if (result.menus && result.menus.length) {
+          this.setMenus(result.menus);
         }
-      } catch (error) {
-        console.warn('获取用户信息失败:', error);
+        if (result.roles && result.roles.length) {
+          this.setPermissions(result.roles.map((r: any) => r.role_code));
+        }
+        this.setUserInfo(result);
+        this.setAvatar(result.avatar || '');
+        return result;
       }
-      const defaultInfo = {
-        username: 'admin',
-        email: 'admin@example.com',
-        permissions: [] as string[],
-        menus: [] as string[],
-      };
-      this.setPermissions(defaultInfo.permissions);
-      this.setMenus(defaultInfo.menus);
-      this.setUserInfo({ username: defaultInfo.username, email: defaultInfo.email });
-      return defaultInfo;
     },
 
     // 登出

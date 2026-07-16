@@ -112,17 +112,17 @@ export function getTask(id: number) {
 
 /** 创建爬虫任务 */
 export function createScrapeTask(data: CreateScrapeTaskRequest) {
-  return Alova.Post<TaskExecution>('/tasks/scrape', { data });
+  return Alova.Post<TaskExecution>('/tasks/scrape', data);
 }
 
 /** 创建私信任务 */
 export function createMessageTask(data: CreateMessageTaskRequest) {
-  return Alova.Post<TaskExecution>('/tasks/message', { data });
+  return Alova.Post<TaskExecution>('/tasks/message', data);
 }
 
 /** 创建评论回复任务 */
 export function createReplyTask(data: CreateReplyTaskRequest) {
-  return Alova.Post<TaskExecution>('/tasks/reply', { data });
+  return Alova.Post<TaskExecution>('/tasks/reply', data);
 }
 
 /** 停止任务 */

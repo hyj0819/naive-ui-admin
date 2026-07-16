@@ -5,5 +5,5 @@ export const websiteConfig = Object.freeze({
   title: '截流获客',
   logo: logoImage,
   loginImage: loginImage,
-  loginDesc: '截流获客解决方案',
+  loginDesc: '',
 });
