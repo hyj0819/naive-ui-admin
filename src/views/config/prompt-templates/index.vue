@@ -145,7 +145,7 @@ const actionColumn = reactive({
 });
 
 const formData = reactive<CreatePromptTemplateRequest & UpdatePromptTemplateRequest>({
-  business_line_id: 0,
+  business_line_id: null as unknown as number,
   template_code: '',
   name: '',
   template_content: '',
@@ -165,7 +165,7 @@ onMounted(async () => {
 function addTemplate() {
   editId.value = null;
   modalTitle.value = '新增提示词';
-  Object.assign(formData, { business_line_id: 0, template_code: '', name: '', template_content: '', variables: '', version: 1, status: 1 });
+  Object.assign(formData, { business_line_id: null, template_code: '', name: '', template_content: '', variables: '', version: 1, status: 1 });
   showModal.value = true;
 }
 

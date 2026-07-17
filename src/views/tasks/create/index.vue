@@ -271,7 +271,7 @@ const taskTypes = [
 // 表单数据
 const scrapeForm = reactive<CreateScrapeTaskRequest>({
   task_name: '',
-  business_line_id: 0,
+  business_line_id: null as unknown as number,
   keywords: [],
   content_types: ['video', 'comment'],
   max_items_per_keyword: 50,
@@ -282,7 +282,7 @@ const scrapeForm = reactive<CreateScrapeTaskRequest>({
 
 const messageForm = reactive<CreateMessageTaskRequest>({
   task_name: '',
-  business_line_id: 0,
+  business_line_id: null as unknown as number,
   target_contact_ids: [],
   message_mode: 'personalized',
   prompt_template_id: undefined,
@@ -294,7 +294,7 @@ const messageForm = reactive<CreateMessageTaskRequest>({
 
 const replyForm = reactive<CreateReplyTaskRequest>({
   task_name: '',
-  business_line_id: 0,
+  business_line_id: null as unknown as number,
   keywords: [],
   prompt_template_id: undefined,
   max_reply_count: 30,

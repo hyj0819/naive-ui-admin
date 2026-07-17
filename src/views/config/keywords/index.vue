@@ -126,7 +126,7 @@ const actionColumn = reactive({
 });
 
 const formData = reactive({
-  business_line_id: 0,
+  business_line_id: null as number | null,
   keyword: '',
   keywordsText: '',
   priority: 0,
@@ -144,7 +144,7 @@ onMounted(async () => {
 function addKeyword() {
   editId.value = null;
   modalTitle.value = '新增关键词';
-  Object.assign(formData, { business_line_id: 0, keyword: '', keywordsText: '', priority: 0, status: 1 });
+  Object.assign(formData, { business_line_id: null, keyword: '', keywordsText: '', priority: 0, status: 1 });
   showModal.value = true;
 }
 
@@ -156,6 +156,10 @@ function handleEdit(record: Keyword) {
 }
 
 async function submitForm() {
+  if (!formData.business_line_id) {
+    message.warning('请选择所属业务线');
+    return;
+  }
   formLoading.value = true;
   try {
     if (editId.value) {

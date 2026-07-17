@@ -126,7 +126,7 @@ const actionColumn = reactive({
 });
 
 const formData = reactive<CreateBusinessLineRequest & UpdateBusinessLineRequest>({
-  platform_id: 0,
+  platform_id: null as unknown as number,
   code: '',
   name: '',
   status: 1,
@@ -143,7 +143,7 @@ onMounted(async () => {
 function addBusinessLine() {
   editId.value = null;
   modalTitle.value = '新增业务线';
-  Object.assign(formData, { platform_id: 0, code: '', name: '', status: 1 });
+  Object.assign(formData, { platform_id: null, code: '', name: '', status: 1 });
   showModal.value = true;
 }
 
