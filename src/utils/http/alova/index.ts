@@ -74,18 +74,9 @@ export const Alova = createAlova({
     onSuccess: async (response, method) => {
       // Fetch API 不会对 4xx/5xx 抛错，需手动检测 HTTP 错误状态码
       if (response.status && response.status >= 400) {
-        // 401 未授权：清除登录态，跳转登录页（不弹错误提示）
-        if (response.status === 401) {
-          storage.remove(ACCESS_TOKEN);
-          const userStore = useUser();
-          userStore.setPermissions([]);
-          userStore.setMenus([]);
-          userStore.setUserInfo({ username: '', email: '' });
-          window.location.href = PageEnum.BASE_LOGIN;
-          throw new Error('登录已失效，请重新登录');
-        }
         // @ts-ignore
         const Message = window.$message;
+        // 解析后端返回的错误信息
         let errorMsg = `请求失败(${response.status})`;
         try {
           const body = await response.json();
@@ -97,6 +88,23 @@ export const Alova = createAlova({
             errorMsg = body.message;
           }
         } catch { /* 解析失败使用默认提示 */ }
+
+        // 401 未授权
+        if (response.status === 401) {
+          // 登录请求的 401 表示账号或密码错误，直接提示，不清除登录态/跳转
+          if (method.meta?.isLogin) {
+            Message?.error(errorMsg || '用户名或密码错误');
+            throw new Error(errorMsg || '用户名或密码错误');
+          }
+          // 其他请求的 401：登录态失效，清除并跳转登录页
+          storage.remove(ACCESS_TOKEN);
+          const userStore = useUser();
+          userStore.setPermissions([]);
+          userStore.setMenus([]);
+          userStore.setUserInfo({ username: '', email: '' });
+          window.location.href = PageEnum.BASE_LOGIN;
+          throw new Error('登录已失效，请重新登录');
+        }
         Message?.error(errorMsg);
         throw new Error(errorMsg);
       }

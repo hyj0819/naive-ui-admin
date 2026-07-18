@@ -21,6 +21,8 @@ export function login(params: { username: string; password: string }) {
     {
       meta: {
         isReturnNativeResponse: true,
+        // 标记为登录请求：401 表示账号或密码错误，应提示而非跳转登录页
+        isLogin: true,
       },
     }
   );

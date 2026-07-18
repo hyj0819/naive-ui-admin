@@ -64,6 +64,8 @@ export interface CreateScrapeTaskRequest {
   keywords: string[];
   content_types: string[];
   max_items_per_keyword: number;
+  max_comments_per_video?: number;
+  timeout_seconds?: number;
   ai_filter_enabled: boolean;
   ai_prompt_template_id?: number;
   exclude_author: boolean;
@@ -125,12 +127,17 @@ export function createReplyTask(data: CreateReplyTaskRequest) {
   return Alova.Post<TaskExecution>('/tasks/reply', data);
 }
 
+/** 启动任务（pending -> queued，由 worker 认领执行） */
+export function startTask(id: number) {
+  return Alova.Post<TaskExecution>(`/tasks/${id}/start`);
+}
+
 /** 停止任务 */
 export function stopTask(id: number) {
   return Alova.Post<TaskExecution>(`/tasks/${id}/stop`);
 }
 
-/** 重试失败任务 */
+/** 重试失败任务（在原任务上重置并重新入队，不新建记录） */
 export function retryTask(id: number) {
   return Alova.Post<TaskExecution>(`/tasks/${id}/retry`);
 }

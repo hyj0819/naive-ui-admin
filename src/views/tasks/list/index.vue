@@ -62,6 +62,7 @@ import { BasicTable, TableAction } from '@/components/Table';
 import { PlusOutlined } from '@vicons/antd';
 import {
   getTaskList,
+  startTask,
   stopTask,
   retryTask,
   deleteTask,
@@ -90,6 +91,7 @@ const taskTypeOptions = [
 
 const statusOptions = [
   { label: '待执行', value: 'pending' },
+  { label: '排队中', value: 'queued' },
   { label: '运行中', value: 'running' },
   { label: '成功', value: 'success' },
   { label: '失败', value: 'failed' },
@@ -110,6 +112,7 @@ onMounted(async () => {
 // 状态配置
 const statusConfig: Record<string, { label: string; type: string }> = {
   pending: { label: '待执行', type: 'default' },
+  queued: { label: '排队中', type: 'info' },
   running: { label: '运行中', type: 'info' },
   success: { label: '成功', type: 'success' },
   failed: { label: '失败', type: 'error' },
@@ -189,12 +192,17 @@ const actionColumn = reactive({
       actions: [
         { label: '详情', onClick: () => handleDetail(record) },
         {
-          label: '停止',
-          onClick: () => handleStop(record),
-          ifShow: () => record.status === 'running',
+          label: '启动',
+          onClick: () => handleStart(record),
+          ifShow: () => record.status === 'pending',
         },
         {
-          label: '重试',
+          label: '停止',
+          onClick: () => handleStop(record),
+          ifShow: () => record.status === 'running' || record.status === 'queued',
+        },
+        {
+          label: '重新执行',
           onClick: () => handleRetry(record),
           ifShow: () => record.status === 'failed' || record.status === 'cancelled',
         },
@@ -236,6 +244,16 @@ function handleDetail(record: TaskExecution) {
   router.push(`/tasks/${record.id}`);
 }
 
+async function handleStart(record: TaskExecution) {
+  try {
+    await startTask(record.id);
+    message.success('任务已加入执行队列');
+    actionRef.value?.reload();
+  } catch (error) {
+    // handled globally
+  }
+}
+
 function handleStop(record: TaskExecution) {
   dialog.warning({
     title: '确认停止',
@@ -257,7 +275,7 @@ function handleStop(record: TaskExecution) {
 async function handleRetry(record: TaskExecution) {
   try {
     await retryTask(record.id);
-    message.success('已创建重试任务');
+    message.success('任务已重新加入执行队列');
     actionRef.value?.reload();
   } catch (error) {
     // handled globally

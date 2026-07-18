@@ -165,7 +165,7 @@
     formRef.value.validate(async (errors) => {
       if (!errors) {
         const { username, password } = formInline;
-        message.loading('登录中...');
+        const loadingMsg = message.loading('登录中...', { duration: 0 });
         loading.value = true;
 
         const params: FormState = {
@@ -175,7 +175,6 @@
 
         try {
           const { code, message: msg } = await userStore.login(params);
-          message.destroyAll();
           if (code == ResultEnum.SUCCESS) {
             const toPath = decodeURIComponent((route.query?.redirect || '/') as string);
             message.success('登录成功，即将进入系统');
@@ -185,7 +184,10 @@
           } else {
             message.info(msg || '登录失败');
           }
+        } catch {
+          // 账号或密码错误等异常已由 http 拦截器统一提示，这里无需重复处理
         } finally {
+          loadingMsg.destroy();
           loading.value = false;
         }
       } else {

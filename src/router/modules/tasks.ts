@@ -34,6 +34,15 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import('@/views/tasks/create/index.vue'),
       },
       {
+        path: ':id/report',
+        name: 'task_report',
+        meta: {
+          title: '任务报告',
+          hideMenu: true,
+        },
+        component: () => import('@/views/tasks/report/index.vue'),
+      },
+      {
         path: ':id',
         name: 'task_detail',
         meta: {

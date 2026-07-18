@@ -94,6 +94,8 @@ export const useAsyncRouteStore = defineStore({
         const { meta, name } = route;
         // dashboard 路由（隐藏菜单，仅用于首页重定向）始终保留
         if (name === 'dashboard' || name === 'dashboard_console' || name === 'dashboard_workplace') return true;
+        // 隐藏菜单的路由（通过其他页面跳转访问）始终保留
+        if (meta?.hideMenu) return true;
         // 如果用户 menu_keys 为空，说明没有任何菜单权限，过滤掉所有业务路由
         if (menuKeys.length === 0) return false;
         // 如果路由 name 在 menu_keys 中，允许访问
