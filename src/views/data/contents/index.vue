@@ -8,18 +8,20 @@
     <n-card :bordered="false" class="mt-4 proCard">
       <!-- 筛选栏 -->
       <n-space vertical :size="12">
-        <n-space align="center">
-          <n-select v-model:value="filterParams.platform_id" placeholder="平台" clearable :options="platformOptions" style="width: 140px" />
-          <n-select v-model:value="filterParams.business_line_id" placeholder="业务线" clearable :options="businessLineOptions" style="width: 160px" />
-          <n-select v-model:value="filterParams.content_type" placeholder="内容类型" clearable :options="contentTypeOptions" style="width: 130px" />
-          <n-input v-model:value="filterParams.source_keyword" placeholder="来源关键词" clearable style="width: 160px" @keyup.enter="handleSearch" />
-          <n-button type="primary" @click="handleSearch">搜索</n-button>
-          <n-button @click="handleReset">重置</n-button>
-          <n-button @click="handleExport">
-            <template #icon><n-icon><DownloadOutlined /></n-icon></template>
-            导出CSV
-          </n-button>
-        </n-space>
+        <div class="filter-bar">
+          <n-select v-model:value="filterParams.platform_id" placeholder="平台" clearable :options="platformOptions" />
+          <n-select v-model:value="filterParams.business_line_id" placeholder="业务线" clearable :options="businessLineOptions" />
+          <n-select v-model:value="filterParams.content_type" placeholder="内容类型" clearable :options="contentTypeOptions" />
+          <n-input v-model:value="filterParams.source_keyword" placeholder="来源关键词" clearable @keyup.enter="handleSearch" />
+          <div class="filter-actions">
+            <n-button type="primary" @click="handleSearch">搜索</n-button>
+            <n-button @click="handleReset">重置</n-button>
+            <n-button @click="handleExport">
+              <template #icon><n-icon><DownloadOutlined /></n-icon></template>
+              导出CSV
+            </n-button>
+          </div>
+        </div>
 
         <!-- 表格 -->
         <BasicTable
@@ -33,37 +35,54 @@
     </n-card>
 
     <!-- 详情弹窗 -->
-    <n-modal v-model:show="showDetailModal" preset="card" title="内容详情" style="width: 640px;">
+    <n-modal
+      v-model:show="showDetailModal"
+      preset="card"
+      title="内容详情"
+      class="content-detail-modal"
+      :style="{ width: '900px' }">
       <template v-if="currentContent">
-        <n-descriptions label-placement="left" bordered :column="1">
-          <n-descriptions-item label="标题">{{ currentContent.title || '-' }}</n-descriptions-item>
-          <n-descriptions-item label="平台">{{ currentContent.platform_name }}</n-descriptions-item>
-          <n-descriptions-item label="业务线">{{ currentContent.business_line_name }}</n-descriptions-item>
-          <n-descriptions-item label="内容类型">
-            <n-tag size="small">{{ typeLabel(currentContent.content_type) }}</n-tag>
-          </n-descriptions-item>
-          <n-descriptions-item label="内容链接">
-            <n-a :href="currentContent.content_url" target="_blank">{{ currentContent.content_url }}</n-a>
-          </n-descriptions-item>
-          <n-descriptions-item label="作者">{{ currentContent.author_name || '-' }}</n-descriptions-item>
-          <n-descriptions-item label="来源关键词">{{ currentContent.source_keyword || '-' }}</n-descriptions-item>
-          <n-descriptions-item label="采集时间">{{ currentContent.scraped_at }}</n-descriptions-item>
-        </n-descriptions>
+        <div class="detail-body">
+          <div class="detail-col detail-col-left">
+            <n-descriptions label-placement="left" bordered :column="1" :label-style="{ width: '90px' }">
+              <n-descriptions-item label="标题">{{ currentContent.title || '-' }}</n-descriptions-item>
+              <n-descriptions-item label="平台">{{ currentContent.platform_name }}</n-descriptions-item>
+              <n-descriptions-item label="业务线">{{ currentContent.business_line_name }}</n-descriptions-item>
+              <n-descriptions-item label="内容类型">
+                <n-tag size="small">{{ typeLabel(currentContent.content_type) }}</n-tag>
+              </n-descriptions-item>
+              <n-descriptions-item label="内容链接">
+                <n-a :href="currentContent.content_url" target="_blank">{{ currentContent.content_url }}</n-a>
+              </n-descriptions-item>
+              <n-descriptions-item label="作者">{{ currentContent.author_name || '-' }}</n-descriptions-item>
+              <n-descriptions-item label="来源关键词">{{ currentContent.source_keyword || '-' }}</n-descriptions-item>
+              <n-descriptions-item label="采集时间">{{ currentContent.scraped_at }}</n-descriptions-item>
+            </n-descriptions>
+          </div>
 
-        <n-divider>内容正文</n-divider>
-        <n-card embedded :bordered="false" style="max-height: 200px; overflow-y: auto;">
-          {{ currentContent.content_text || '暂无内容' }}
-        </n-card>
+          <div class="detail-col">
+            <div class="detail-section">
+              <div class="detail-section-title">内容正文</div>
+              <n-card embedded :bordered="false" class="content-scroll-card">
+                {{ currentContent.content_text || '暂无内容' }}
+              </n-card>
+            </div>
 
-        <n-divider>互动数据</n-divider>
-        <n-card embedded :bordered="false">
-          <pre style="white-space: pre-wrap; word-break: break-all;">{{ formatJson(currentContent.engagement_stats) }}</pre>
-        </n-card>
+            <div class="detail-section">
+              <div class="detail-section-title">互动数据</div>
+              <n-card embedded :bordered="false" class="content-scroll-card">
+                <pre class="content-pre">{{ formatJson(currentContent.engagement_stats) }}</pre>
+              </n-card>
+            </div>
 
-        <n-divider>AI分析结果</n-divider>
-        <n-card embedded :bordered="false">
-          <pre style="white-space: pre-wrap; word-break: break-all;">{{ currentContent.ai_analysis_result || '暂无分析结果' }}</pre>
-        </n-card>
+            <div class="detail-section">
+              <div class="detail-section-title">AI分析结果</div>
+              <n-card embedded :bordered="false" class="content-scroll-card">
+                <pre class="content-pre">{{ currentContent.ai_analysis_result || '暂无分析结果' }}</pre>
+              </n-card>
+            </div>
+          </div>
+        </div>
       </template>
     </n-modal>
   </div>
@@ -126,20 +145,20 @@ function formatJson(str: string | null) {
 }
 
 const columns = [
-  { title: '标题', key: 'title', ellipsis: true, width: 220 },
+  { title: '标题', key: 'title', ellipsis: true, width: 220, minWidth: 120 },
   {
-    title: '类型', key: 'content_type', width: 80,
+    title: '类型', key: 'content_type', width: 80, minWidth: 60,
     render(row: Content) {
       return h('span', {}, [
         h(resolveComponent('n-tag'), { type: typeTagType(row.content_type), size: 'small' }, () => typeLabel(row.content_type))
       ]);
     },
   },
-  { title: '作者', key: 'author_name', width: 120, ellipsis: true },
-  { title: '平台', key: 'platform_name', width: 100 },
-  { title: '业务线', key: 'business_line_name', width: 110 },
-  { title: '来源关键词', key: 'source_keyword', width: 130, ellipsis: true },
-  { title: '采集时间', key: 'scraped_at', width: 150 },
+  { title: '作者', key: 'author_name', width: 120, minWidth: 80, ellipsis: true },
+  { title: '平台', key: 'platform_name', width: 100, minWidth: 70 },
+  { title: '业务线', key: 'business_line_name', width: 110, minWidth: 80, ellipsis: true },
+  { title: '来源关键词', key: 'source_keyword', width: 130, minWidth: 80, ellipsis: true },
+  { title: '采集时间', key: 'scraped_at', width: 150, minWidth: 100, ellipsis: true },
 ];
 
 const actionColumn = reactive({
@@ -216,4 +235,95 @@ onMounted(async () => {
 });
 </script>
 
-<style lang="less" scoped></style>
+<style lang="less">
+.content-detail-modal {
+  width: 900px;
+  max-height: calc(100vh - 120px);
+
+  .n-card {
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 120px);
+  }
+
+  .n-card__content {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    overflow-y: auto;
+  }
+}
+</style>
+
+<style lang="less" scoped>
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+
+  :deep(.n-select) {
+    min-width: 120px;
+    flex: 1;
+    max-width: 200px;
+  }
+
+  :deep(.n-input) {
+    min-width: 120px;
+    flex: 1;
+    max-width: 200px;
+  }
+
+  .filter-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+}
+
+.detail-body {
+  display: flex;
+  gap: 24px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.detail-col {
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.detail-col-left {
+  flex: 0 0 500px;
+}
+
+.detail-section {
+  margin-bottom: 16px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.detail-section-title {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  color: rgba(0, 0, 0, 0.85);
+}
+
+.content-scroll-card {
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.content-pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+</style>

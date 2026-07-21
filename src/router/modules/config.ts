@@ -13,14 +13,14 @@ const routes: Array<RouteRecordRaw> = [
     meta: {
       title: '配置中心',
       icon: renderIcon(SettingOutlined),
-      sort: 3,
+      sort: 1,
     },
     children: [
       {
         path: 'platforms',
         name: 'config_platforms',
         meta: {
-          title: '平台管理',
+          title: '应用管理',
         },
         component: () => import('@/views/config/platforms/index.vue'),
       },
@@ -28,7 +28,7 @@ const routes: Array<RouteRecordRaw> = [
         path: 'business-lines',
         name: 'config_business_lines',
         meta: {
-          title: '业务线管理',
+          title: '项目管理',
         },
         component: () => import('@/views/config/business-lines/index.vue'),
       },

@@ -26,7 +26,7 @@
       </BasicTable>
     </n-card>
 
-    <n-modal v-model:show="showModal" :show-icon="false" preset="dialog" :title="modalTitle">
+    <n-modal v-model:show="showModal" :show-icon="false" preset="dialog" :title="modalTitle" :style="{ width: '740px' }">
       <n-form :model="formData" :label-width="100" class="mt-4">
         <n-form-item label="所属业务线">
           <n-select v-model:value="formData.business_line_id" placeholder="请选择业务线" :options="businessLineOptions" />

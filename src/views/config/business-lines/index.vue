@@ -1,8 +1,8 @@
 <template>
   <div>
     <div class="n-layout-page-header">
-      <n-card :bordered="false" title="业务线配置">
-        管理各平台下的业务线配置
+      <n-card :bordered="false" title="项目配置">
+        管理各应用下的项目配置
       </n-card>
     </div>
     <n-card :bordered="false" class="mt-4 proCard">
@@ -20,7 +20,7 @@
                 <PlusOutlined />
               </n-icon>
             </template>
-            新增业务线
+            新增项目
           </n-button>
         </template>
       </BasicTable>
@@ -28,14 +28,14 @@
 
     <n-modal v-model:show="showModal" :show-icon="false" preset="dialog" :title="modalTitle">
       <n-form :model="formData" :label-width="100" class="mt-4">
-        <n-form-item label="所属平台">
-          <n-select v-model:value="formData.platform_id" placeholder="请选择平台" :options="platformOptions" />
+        <n-form-item label="所属应用">
+          <n-select v-model:value="formData.platform_id" placeholder="请选择应用" :options="applicationOptions" />
         </n-form-item>
-        <n-form-item label="业务线编码">
+        <n-form-item label="项目编码">
           <n-input v-model:value="formData.code" placeholder="如: golf, stock" />
         </n-form-item>
-        <n-form-item label="业务线名称">
-          <n-input v-model:value="formData.name" placeholder="请输入业务线名称" />
+        <n-form-item label="项目名称">
+          <n-input v-model:value="formData.name" placeholder="请输入项目名称" />
         </n-form-item>
         <n-form-item label="状态">
           <n-switch v-model:value="formData.status" :checked-value="1" :unchecked-value="0" />
@@ -64,27 +64,27 @@ const dialog = useDialog();
 const actionRef = ref();
 const showModal = ref(false);
 const formLoading = ref(false);
-const modalTitle = ref('新增业务线');
+const modalTitle = ref('新增项目');
 const editId = ref<number | null>(null);
-const platformList = ref<Platform[]>([]);
+const applicationList = ref<Platform[]>([]);
 
-const platformOptions = computed(() => {
-  return platformList.value.map(p => ({ label: p.name, value: p.id }));
+const applicationOptions = computed(() => {
+  return applicationList.value.map(p => ({ label: p.name, value: p.id }));
 });
 
 const columns = [
   {
-    title: '所属平台',
+    title: '所属应用',
     key: 'platform_name',
     width: 120,
   },
   {
-    title: '业务线编码',
+    title: '项目编码',
     key: 'code',
     width: 120,
   },
   {
-    title: '业务线名称',
+    title: '项目名称',
     key: 'name',
     width: 150,
   },
@@ -137,19 +137,19 @@ const loadDataTable = async (res: any) => {
 };
 
 onMounted(async () => {
-  platformList.value = await getPlatformListRaw();
+  applicationList.value = await getPlatformListRaw();
 });
 
 function addBusinessLine() {
   editId.value = null;
-  modalTitle.value = '新增业务线';
+  modalTitle.value = '新增项目';
   Object.assign(formData, { platform_id: null, code: '', name: '', status: 1 });
   showModal.value = true;
 }
 
 function handleEdit(record: BusinessLine) {
   editId.value = record.id;
-  modalTitle.value = '编辑业务线';
+  modalTitle.value = '编辑项目';
   Object.assign(formData, { platform_id: record.platform_id, code: record.code, name: record.name, status: record.status });
   showModal.value = true;
 }
@@ -177,7 +177,7 @@ async function submitForm() {
 function handleDelete(record: BusinessLine) {
   dialog.warning({
     title: '确认删除',
-    content: `确定要删除业务线「${record.name}」吗？删除后不可恢复。`,
+    content: `确定要删除项目「${record.name}」吗？删除后不可恢复。`,
     positiveText: '确认删除',
     negativeText: '取消',
     onPositiveClick: async () => {

@@ -124,8 +124,8 @@ const menuTreeData: TreeOption[] = [
     key: 'config',
     label: '配置中心',
     children: [
-      { key: 'config_platforms', label: '平台管理' },
-      { key: 'config_business_lines', label: '业务线管理' },
+      { key: 'config_platforms', label: '应用管理' },
+      { key: 'config_business_lines', label: '项目管理' },
       { key: 'config_keywords', label: '关键词管理' },
       { key: 'config_prompt_templates', label: '提示词管理' },
       { key: 'config_ai_models', label: 'AI模型配置' },

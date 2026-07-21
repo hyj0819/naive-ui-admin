@@ -13,7 +13,7 @@ const routes: Array<RouteRecordRaw> = [
     meta: {
       title: '任务中心',
       icon: renderIcon(PlayCircleOutlined),
-      sort: 1,
+      sort: 2,
     },
     children: [
       {

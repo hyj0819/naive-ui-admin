@@ -13,7 +13,7 @@ const routes: Array<RouteRecordRaw> = [
     meta: {
       title: '数据中心',
       icon: renderIcon(DatabaseOutlined),
-      sort: 2, // 排在任务中心之后
+      sort: 3,
     },
     children: [
       {
