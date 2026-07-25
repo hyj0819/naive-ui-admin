@@ -28,28 +28,25 @@
 
     <n-modal v-model:show="showModal" :show-icon="false" preset="dialog" :title="modalTitle" :style="{ width: '740px' }">
       <n-form :model="formData" :label-width="100" class="mt-4">
-        <n-form-item label="所属业务线">
-          <n-select v-model:value="formData.business_line_id" placeholder="请选择业务线" :options="businessLineOptions" />
-        </n-form-item>
-        <n-form-item label="模板编码">
-          <n-input v-model:value="formData.template_code" placeholder="如: customer_filter" />
-        </n-form-item>
-        <n-form-item label="模板名称">
-          <n-input v-model:value="formData.name" placeholder="请输入模板名称" />
-        </n-form-item>
-        <n-form-item label="模板内容">
-          <n-input v-model:value="formData.template_content" type="textarea" :rows="6" placeholder="请输入提示词模板内容，支持变量替换如 {variable}" />
-        </n-form-item>
-        <n-form-item label="变量列表">
-          <n-input v-model:value="formData.variables" placeholder="JSON数组格式，如: ['post_content', 'comment_content']" />
-        </n-form-item>
-        <n-form-item label="版本">
-          <n-input-number v-model:value="formData.version" :min="1" />
-        </n-form-item>
-        <n-form-item label="状态">
-          <n-switch v-model:value="formData.status" :checked-value="1" :unchecked-value="0" />
-        </n-form-item>
-      </n-form>
+          <n-form-item label="所属业务线">
+            <n-select v-model:value="formData.business_line_id" placeholder="请选择业务线" :options="businessLineOptions" />
+          </n-form-item>
+          <n-form-item label="模板名称">
+            <n-input v-model:value="formData.name" placeholder="请输入模板名称" />
+          </n-form-item>
+          <n-form-item label="模板内容">
+            <n-input v-model:value="formData.template_content" type="textarea" :rows="6" placeholder="请输入提示词模板内容，支持变量替换如 {variable}" />
+          </n-form-item>
+          <n-form-item label="变量列表">
+            <n-input v-model:value="formData.variables" placeholder="JSON数组格式，如: ['post_content', 'comment_content']" />
+          </n-form-item>
+          <n-form-item label="版本">
+            <n-input-number v-model:value="formData.version" :min="1" />
+          </n-form-item>
+          <n-form-item label="状态">
+            <n-switch v-model:value="formData.status" :checked-value="1" :unchecked-value="0" />
+          </n-form-item>
+        </n-form>
       <template #action>
         <n-space>
           <n-button type="info" ghost @click="showModal = false">取消</n-button>
@@ -146,7 +143,6 @@ const actionColumn = reactive({
 
 const formData = reactive<CreatePromptTemplateRequest & UpdatePromptTemplateRequest>({
   business_line_id: null as unknown as number,
-  template_code: '',
   name: '',
   template_content: '',
   variables: '',
@@ -165,14 +161,14 @@ onMounted(async () => {
 function addTemplate() {
   editId.value = null;
   modalTitle.value = '新增提示词';
-  Object.assign(formData, { business_line_id: null, template_code: '', name: '', template_content: '', variables: '', version: 1, status: 1 });
+  Object.assign(formData, { business_line_id: null, name: '', template_content: '', variables: '', version: 1, status: 1 });
   showModal.value = true;
 }
 
 function handleEdit(record: PromptTemplate) {
   editId.value = record.id;
   modalTitle.value = '编辑提示词';
-  Object.assign(formData, { business_line_id: record.business_line_id, template_code: record.template_code, name: record.name, template_content: record.template_content, variables: record.variables, version: record.version, status: record.status });
+  Object.assign(formData, { business_line_id: record.business_line_id, name: record.name, template_content: record.template_content, variables: record.variables, version: record.version, status: record.status });
   showModal.value = true;
 }
 

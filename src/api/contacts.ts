@@ -75,11 +75,11 @@ export function getContact(id: number) {
 }
 
 export function createContact(data: CreateContactRequest) {
-  return Alova.Post<Contact>('/contacts', { data });
+  return Alova.Post<Contact>('/contacts', data);
 }
 
 export function updateContact(id: number, data: UpdateContactRequest) {
-  return Alova.Put<Contact>(`/contacts/${id}`, { data });
+  return Alova.Put<Contact>(`/contacts/${id}`, data);
 }
 
 export function deleteContact(id: number) {
@@ -87,7 +87,7 @@ export function deleteContact(id: number) {
 }
 
 export function batchUpdateContacts(ids: number[], contact_status: string) {
-  return Alova.Post('/contacts/batch-update', { data: { ids, contact_status } });
+  return Alova.Post('/contacts/batch-update', { ids, contact_status });
 }
 
 export function getContactInteractions(contactId: number) {
@@ -95,7 +95,7 @@ export function getContactInteractions(contactId: number) {
 }
 
 export function createContactInteraction(contactId: number, data: { interaction_type: string; task_execution_id?: number; detail?: string }) {
-  return Alova.Post<ContactInteraction>(`/contacts/${contactId}/interactions`, { data });
+  return Alova.Post<ContactInteraction>(`/contacts/${contactId}/interactions`, data);
 }
 
 export function getContactExportUrl(params?: { platform_id?: number; business_line_id?: number; contact_status?: string; keyword?: string }) {

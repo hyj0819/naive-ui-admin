@@ -11,7 +11,7 @@ export interface Platform {
 }
 
 export interface CreatePlatformRequest {
-  code: string;
+  code?: string;
   name: string;
   status?: number;
   config?: string;
@@ -46,11 +46,11 @@ export function getPlatform(id: number) {
 }
 
 export function createPlatform(data: CreatePlatformRequest) {
-  return Alova.Post<Platform>('/config/platforms', { data });
+  return Alova.Post<Platform>('/config/platforms', data);
 }
 
 export function updatePlatform(id: number, data: UpdatePlatformRequest) {
-  return Alova.Put<Platform>(`/config/platforms/${id}`, { data });
+  return Alova.Put<Platform>(`/config/platforms/${id}`, data);
 }
 
 export function deletePlatform(id: number) {

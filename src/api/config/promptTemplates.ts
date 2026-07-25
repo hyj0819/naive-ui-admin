@@ -17,7 +17,7 @@ export interface PromptTemplate {
 
 export interface CreatePromptTemplateRequest {
   business_line_id: number;
-  template_code: string;
+  template_code?: string;
   name: string;
   template_content: string;
   variables?: string;

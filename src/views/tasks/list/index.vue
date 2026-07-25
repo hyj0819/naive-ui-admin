@@ -33,6 +33,15 @@
           <n-button type="primary" @click="handleSearch">搜索</n-button>
           <n-button @click="handleReset">重置</n-button>
         </n-space>
+        <n-space v-if="checkedRowKeys.length > 0">
+          <n-button type="primary" danger @click="handleBatchDelete">
+            <template #icon>
+              <n-icon><DeleteOutlined /></n-icon>
+            </template>
+            批量删除 ({{ checkedRowKeys.length }})
+          </n-button>
+          <n-button @click="checkedRowKeys = []">取消选择</n-button>
+        </n-space>
         <n-button type="primary" @click="goCreate">
           <template #icon>
             <n-icon><PlusOutlined /></n-icon>
@@ -49,6 +58,9 @@
         ref="actionRef"
         :actionColumn="actionColumn"
         :pagination="{ pageSize: 20 }"
+        :checked-row-keys="checkedRowKeys"
+        @update:checked-row-keys="handleCheckedRowKeysChange"
+        :row-class-name="rowClassName"
       />
     </n-card>
   </div>
@@ -59,13 +71,14 @@ import { reactive, ref, h, computed, onMounted } from 'vue';
 import { useMessage, useDialog, NTag, NProgress, NButton } from 'naive-ui';
 import { useRouter } from 'vue-router';
 import { BasicTable, TableAction } from '@/components/Table';
-import { PlusOutlined } from '@vicons/antd';
+import { PlusOutlined, DeleteOutlined } from '@vicons/antd';
 import {
   getTaskList,
   startTask,
   stopTask,
   retryTask,
   deleteTask,
+  deleteTaskBatch,
   type TaskExecution,
   type TaskListParams,
 } from '@/api/tasks';
@@ -76,6 +89,7 @@ const message = useMessage();
 const dialog = useDialog();
 const actionRef = ref();
 const businessLineList = ref<BusinessLine[]>([]);
+const checkedRowKeys = ref<number[]>([]);
 
 const filterParams = reactive<TaskListParams>({
   task_type: undefined,
@@ -227,6 +241,7 @@ const loadDataTable = async (res: any) => {
 
 function handleSearch() {
   actionRef.value?.reload();
+  checkedRowKeys.value = [];
 }
 
 function handleReset() {
@@ -234,6 +249,18 @@ function handleReset() {
   filterParams.business_line_id = undefined;
   filterParams.status = undefined;
   actionRef.value?.reload();
+  checkedRowKeys.value = [];
+}
+
+function handleCheckedRowKeysChange(keys: number[]) {
+  checkedRowKeys.value = keys;
+}
+
+function rowClassName(row: TaskExecution) {
+  if (row.status === 'running') {
+    return 'n-data-table-row--disabled';
+  }
+  return '';
 }
 
 function goCreate() {
@@ -292,6 +319,25 @@ function handleDelete(record: TaskExecution) {
       try {
         await deleteTask(record.id);
         message.success('删除成功');
+        actionRef.value?.reload();
+      } catch (error) {
+        // handled globally
+      }
+    },
+  });
+}
+
+function handleBatchDelete() {
+  dialog.warning({
+    title: '批量删除确认',
+    content: `确定要删除选中的 ${checkedRowKeys.value.length} 个任务吗？删除后不可恢复。运行中的任务将被跳过。`,
+    positiveText: '确认删除',
+    negativeText: '取消',
+    onPositiveClick: async () => {
+      try {
+        await deleteTaskBatch(checkedRowKeys.value);
+        message.success(`成功删除 ${checkedRowKeys.value.length} 个任务`);
+        checkedRowKeys.value = [];
         actionRef.value?.reload();
       } catch (error) {
         // handled globally

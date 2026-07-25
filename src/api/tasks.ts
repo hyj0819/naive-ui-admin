@@ -147,6 +147,11 @@ export function deleteTask(id: number) {
   return Alova.Delete(`/tasks/${id}`);
 }
 
+/** 批量删除任务 */
+export function deleteTaskBatch(ids: number[]) {
+  return Alova.Delete(`/tasks/batch?task_ids=${ids.join(',')}`);
+}
+
 /** 获取任务执行日志 */
 export function getTaskLogs(taskId: number, params?: { page?: number; page_size?: number; log_level?: string }) {
   return Alova.Get<TaskLogListResult>(`/tasks/${taskId}/logs`, { params });

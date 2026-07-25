@@ -14,9 +14,9 @@
     </div>
     <div class="view-account-container animate__animated animate__fadeInDown">
       <div class="view-account-top">
-        <div class="view-account-top-logo">
-          <span class="logo-text">截流获客</span>
-        </div>
+<!--        <div class="view-account-top-logo">-->
+<!--          <span class="logo-text">截流获客</span>-->
+<!--        </div>-->
         <div class="view-account-top-desc">{{ websiteConfig.loginDesc }}</div>
       </div>
       <div class="view-account-form">
@@ -80,33 +80,33 @@
               登录
             </n-button>
           </n-form-item>
-          <n-form-item class="default-color other-item">
-            <div class="flex view-account-other">
-              <div class="flex-initial other-text">
-                <span>其它登录方式</span>
-              </div>
-              <div class="social-login">
-                <a href="javascript:" class="social-icon">
-                  <n-icon size="24" color="#909399">
-                    <LogoGithub />
-                  </n-icon>
-                </a>
-                <a href="javascript:" class="social-icon">
-                  <n-icon size="24" color="#909399">
-                    <LogoFacebook />
-                  </n-icon>
-                </a>
-                <a href="javascript:" class="social-icon">
-                  <n-icon size="24" color="#909399">
-                    <LogoWechat />
-                  </n-icon>
-                </a>
-              </div>
-              <div class="flex-initial" style="margin-left: auto">
-                <a href="javascript:" class="register-link">注册账号</a>
-              </div>
-            </div>
-          </n-form-item>
+<!--          <n-form-item class="default-color other-item">-->
+<!--            <div class="flex view-account-other">-->
+<!--              <div class="flex-initial other-text">-->
+<!--                <span>其它登录方式</span>-->
+<!--              </div>-->
+<!--              <div class="social-login">-->
+<!--                <a href="javascript:" class="social-icon">-->
+<!--                  <n-icon size="24" color="#909399">-->
+<!--                    <LogoGithub />-->
+<!--                  </n-icon>-->
+<!--                </a>-->
+<!--                <a href="javascript:" class="social-icon">-->
+<!--                  <n-icon size="24" color="#909399">-->
+<!--                    <LogoFacebook />-->
+<!--                  </n-icon>-->
+<!--                </a>-->
+<!--                <a href="javascript:" class="social-icon">-->
+<!--                  <n-icon size="24" color="#909399">-->
+<!--                    <LogoWechat />-->
+<!--                  </n-icon>-->
+<!--                </a>-->
+<!--              </div>-->
+<!--              <div class="flex-initial" style="margin-left: auto">-->
+<!--                <a href="javascript:" class="register-link">注册账号</a>-->
+<!--              </div>-->
+<!--            </div>-->
+<!--          </n-form-item>-->
         </n-form>
       </div>
     </div>

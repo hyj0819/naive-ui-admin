@@ -26,7 +26,7 @@
       </BasicTable>
     </n-card>
 
-    <n-modal v-model:show="showModal" :show-icon="false" preset="dialog" :title="modalTitle" style="width: 680px;">
+    <n-modal v-model:show="showModal" :show-icon="false" preset="dialog" :title="modalTitle" style="width: 520px;">
       <n-form :model="formData" :label-width="90" label-placement="left">
         <n-form-item label="提供商">
           <n-select 
@@ -36,10 +36,6 @@
             @update:value="handleProviderChange"
             clearable
           />
-        </n-form-item>
-
-        <n-form-item label="模型名称">
-          <n-input v-model:value="formData.model_name" placeholder="例如：deepseek-chat" />
         </n-form-item>
 
         <n-form-item label="API Key">
@@ -52,69 +48,8 @@
           />
         </n-form-item>
 
-        <n-form-item label="基础URL">
-          <n-input v-model:value="formData.base_url" placeholder="例如：https://api.deepseek.com/v1" />
-        </n-form-item>
-
-        <n-divider title-placement="left" class="section-divider">
-          <n-icon size="14" class="mr-1.5 text-success">
-            <SettingOutlined />
-          </n-icon>
-          模型参数
-        </n-divider>
-
-        <n-form-item label="最大Token">
-          <n-input-number v-model:value="formData.max_tokens" :min="100" :max="128000" :step="100" />
-        </n-form-item>
-
-        <n-form-item label="温度" :show-feedback="false">
-          <div class="slider-container">
-            <div class="slider-wrap">
-              <n-slider v-model:value="formData.temperature" :min="0" :max="100" :step="1" class="slider" />
-              <n-input-number 
-                v-model:value="formData.temperature" 
-                :min="0" 
-                :max="100" 
-                :step="1"
-                class="slider-num"
-              />
-            </div>
-            <div class="slider-hint">
-              <span class="hint-left">稳定精确</span>
-              <span class="hint-right">随机创意</span>
-            </div>
-          </div>
-        </n-form-item>
-
-        <n-form-item label="Top P" :show-feedback="false">
-          <div class="slider-container">
-            <div class="slider-wrap">
-              <n-slider v-model:value="formData.top_p" :min="0" :max="100" :step="1" class="slider" />
-              <n-input-number 
-                v-model:value="formData.top_p" 
-                :min="0" 
-                :max="100" 
-                :step="1"
-                class="slider-num"
-              />
-            </div>
-            <div class="slider-hint">
-              <span class="hint-left">更确定</span>
-              <span class="hint-right">更多样</span>
-            </div>
-          </div>
-        </n-form-item>
-
-        <n-divider title-placement="left" class="section-divider">
-          <n-icon size="14" class="mr-1.5 text-warning">
-            <SettingOutlined />
-          </n-icon>
-          高级配置
-          <n-tag size="small" type="warning" style="margin-left: 8px;">可选</n-tag>
-        </n-divider>
-
-        <n-form-item label="描述">
-          <n-input v-model:value="formData.description" type="textarea" :rows="3" placeholder="请输入模型描述..." />
+        <n-form-item label="API URL">
+          <n-input v-model:value="formData.api_url" placeholder="例如：https://api.deepseek.com/v1" />
         </n-form-item>
       </n-form>
       <template #action>
@@ -143,7 +78,6 @@ import { useMessage, useDialog } from 'naive-ui';
 import { BasicTable, TableAction } from '@/components/Table';
 import { 
   PlusOutlined, 
-  SettingOutlined, 
   EditOutlined
 } from '@vicons/antd';
 import { getAiModelList, createAiModel, updateAiModel, deleteAiModel, activateAiModel, deactivateAiModel, testAiModel, type AIModel, type CreateAIModelRequest, type UpdateAIModelRequest } from '@/api/config/aiModels';
@@ -165,7 +99,7 @@ const apiKeyPlaceholder = computed(() => {
   return '请输入API Key';
 });
 
-const defaultBaseUrls: Record<string, string> = {
+const defaultApiUrls: Record<string, string> = {
   deepseek: 'https://api.deepseek.com/v1',
   openai: 'https://api.openai.com/v1',
   anthropic: 'https://api.anthropic.com/v1',
@@ -201,28 +135,14 @@ const columns = [
     },
   },
   {
-    title: '模型名称',
-    key: 'model_name',
-    width: 180,
-  },
-  {
     title: 'API Key',
     key: 'api_key_masked',
     width: 180,
   },
   {
-    title: '基础URL',
-    key: 'base_url',
+    title: 'API URL',
+    key: 'api_url',
     ellipsis: true,
-  },
-  {
-    title: '描述',
-    key: 'description',
-    ellipsis: true,
-    width: 200,
-    render(row: AIModel) {
-      return row.description || '-';
-    },
   },
   {
     title: '状态',
@@ -277,25 +197,19 @@ const actionColumn = reactive({
 
 const formData = reactive<CreateAIModelRequest & UpdateAIModelRequest>({
   provider: '',
-  model_name: '',
   api_key: '',
-  base_url: '',
-  max_tokens: 2000,
-  temperature: 70,
-  top_p: 90,
-  description: '',
+  api_url: '',
 });
 
 function handleProviderChange(provider: string) {
-  if (provider && defaultBaseUrls[provider]) {
-    formData.base_url = defaultBaseUrls[provider];
+  if (provider && defaultApiUrls[provider]) {
+    formData.api_url = defaultApiUrls[provider];
   } else {
-    formData.base_url = '';
+    formData.api_url = '';
   }
 }
 
-/** 清理 base_url 中的反引号 */
-function cleanBaseUrl(url: string): string {
+function cleanApiUrl(url: string): string {
   return url ? url.replace(/`/g, '').trim() : url;
 }
 
@@ -303,7 +217,7 @@ const loadDataTable = async (res: any) => {
   const result = await getAiModelList(res);
   result.list = result.list.map((item: AIModel) => ({
     ...item,
-    base_url: item.base_url ? item.base_url.trim().replace(/^`|`$/g, '') : '',
+    api_url: item.api_url ? item.api_url.trim().replace(/^`|`$/g, '') : '',
   }));
   return result;
 };
@@ -315,13 +229,8 @@ function addModel() {
   editApiKeyMasked.value = '';
   Object.assign(formData, {
     provider: '',
-    model_name: '',
     api_key: '',
-    base_url: '',
-    max_tokens: 2000,
-    temperature: 70,
-    top_p: 90,
-    description: '',
+    api_url: '',
   });
   showModal.value = true;
 }
@@ -333,26 +242,19 @@ function handleEdit(record: AIModel) {
   editApiKeyMasked.value = record.api_key_masked || '';
   Object.assign(formData, {
     provider: record.provider,
-    model_name: record.model_name,
     api_key: '',
-    base_url: record.base_url,
-    max_tokens: record.max_tokens,
-    temperature: record.temperature,
-    top_p: record.top_p,
-    description: record.description,
+    api_url: record.api_url,
   });
   showModal.value = true;
 }
 
 async function submitForm() {
-  // 提交前切换为text类型，避免浏览器弹出保存密码提示
   apiKeyInputType.value = 'text';
   await nextTick();
   formLoading.value = true;
   try {
-    // 清理 base_url 中的反引号
     const submitData: Record<string, any> = { ...formData };
-    submitData.base_url = cleanBaseUrl(submitData.base_url);
+    submitData.api_url = cleanApiUrl(submitData.api_url);
 
     if (editId.value) {
       if (!submitData.api_key) {
@@ -368,7 +270,6 @@ async function submitForm() {
     await nextTick();
     await actionRef.value?.reload();
   } catch (error: any) {
-    // alova 全局处理器已展示错误信息，此处无需重复提示
   } finally {
     formLoading.value = false;
     apiKeyInputType.value = 'password';
@@ -378,7 +279,7 @@ async function submitForm() {
 function handleDelete(record: AIModel) {
   dialog.warning({
     title: '确认删除',
-    content: `确定要删除模型「${record.provider} / ${record.model_name}」吗？删除后不可恢复。`,
+    content: `确定要删除模型「${record.provider}」吗？删除后不可恢复。`,
     positiveText: '确认删除',
     negativeText: '取消',
     onPositiveClick: async () => {
@@ -388,7 +289,6 @@ function handleDelete(record: AIModel) {
         await nextTick();
         await actionRef.value?.reload();
       } catch (error) {
-        // alova 全局处理器已展示错误信息
       }
     },
   });
@@ -401,7 +301,6 @@ async function handleActivate(record: AIModel) {
     await nextTick();
     await actionRef.value?.reload();
   } catch (error) {
-    // alova 全局处理器已展示错误信息
   }
 }
 
@@ -412,7 +311,6 @@ async function handleDeactivate(record: AIModel) {
     await nextTick();
     await actionRef.value?.reload();
   } catch (error) {
-    // alova 全局处理器已展示错误信息
   }
 }
 
@@ -421,48 +319,9 @@ async function handleTest(record: AIModel) {
     await testAiModel(record.id);
     message.success('测试成功');
   } catch (error) {
-    // alova 全局处理器已展示错误信息
   }
 }
 </script>
 
 <style lang="less" scoped>
-.section-divider {
-  margin: 12px 0;
-}
-
-.slider-container {
-  width: 100%;
-}
-
-.slider-wrap {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  width: 100%;
-}
-
-.slider-wrap .slider {
-  flex: 1;
-  min-width: 80px;
-}
-
-.slider-wrap .slider-num {
-  width: 80px;
-  flex-shrink: 0;
-}
-
-.slider-hint {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 4px;
-  padding: 0 2px;
-  line-height: 1.2;
-}
-
-.slider-hint .hint-left,
-.slider-hint .hint-right {
-  font-size: 12px;
-  color: #999;
-}
 </style>

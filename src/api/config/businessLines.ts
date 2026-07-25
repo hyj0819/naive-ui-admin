@@ -14,7 +14,7 @@ export interface BusinessLine {
 
 export interface CreateBusinessLineRequest {
   platform_id: number;
-  code: string;
+  code?: string;
   name: string;
   status?: number;
   config?: string;

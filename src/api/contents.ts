@@ -58,7 +58,7 @@ export function getContent(id: number) {
 }
 
 export function createContent(data: CreateContentRequest) {
-  return Alova.Post<Content>('/contents', { data });
+  return Alova.Post<Content>('/contents', data);
 }
 
 export function deleteContent(id: number) {

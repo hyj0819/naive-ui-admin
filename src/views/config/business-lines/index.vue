@@ -28,19 +28,16 @@
 
     <n-modal v-model:show="showModal" :show-icon="false" preset="dialog" :title="modalTitle">
       <n-form :model="formData" :label-width="100" class="mt-4">
-        <n-form-item label="所属应用">
-          <n-select v-model:value="formData.platform_id" placeholder="请选择应用" :options="applicationOptions" />
-        </n-form-item>
-        <n-form-item label="项目编码">
-          <n-input v-model:value="formData.code" placeholder="如: golf, stock" />
-        </n-form-item>
-        <n-form-item label="项目名称">
-          <n-input v-model:value="formData.name" placeholder="请输入项目名称" />
-        </n-form-item>
-        <n-form-item label="状态">
-          <n-switch v-model:value="formData.status" :checked-value="1" :unchecked-value="0" />
-        </n-form-item>
-      </n-form>
+          <n-form-item label="所属应用">
+            <n-select v-model:value="formData.platform_id" placeholder="请选择应用" :options="applicationOptions" />
+          </n-form-item>
+          <n-form-item label="项目名称">
+            <n-input v-model:value="formData.name" placeholder="请输入项目名称" />
+          </n-form-item>
+          <n-form-item label="状态">
+            <n-switch v-model:value="formData.status" :checked-value="1" :unchecked-value="0" />
+          </n-form-item>
+        </n-form>
       <template #action>
         <n-space>
           <n-button type="info" ghost @click="showModal = false">取消</n-button>
@@ -127,7 +124,6 @@ const actionColumn = reactive({
 
 const formData = reactive<CreateBusinessLineRequest & UpdateBusinessLineRequest>({
   platform_id: null as unknown as number,
-  code: '',
   name: '',
   status: 1,
 });
@@ -143,14 +139,14 @@ onMounted(async () => {
 function addBusinessLine() {
   editId.value = null;
   modalTitle.value = '新增项目';
-  Object.assign(formData, { platform_id: null, code: '', name: '', status: 1 });
+  Object.assign(formData, { platform_id: null, name: '', status: 1 });
   showModal.value = true;
 }
 
 function handleEdit(record: BusinessLine) {
   editId.value = record.id;
   modalTitle.value = '编辑项目';
-  Object.assign(formData, { platform_id: record.platform_id, code: record.code, name: record.name, status: record.status });
+  Object.assign(formData, { platform_id: record.platform_id, name: record.name, status: record.status });
   showModal.value = true;
 }
 
