@@ -109,7 +109,6 @@ const menuTreeData: TreeOption[] = [
     children: [
       { key: 'task_list', label: '任务列表' },
       { key: 'task_create', label: '创建任务' },
-      { key: 'task_detail', label: '任务详情' },
     ],
   },
   {
@@ -128,7 +127,7 @@ const menuTreeData: TreeOption[] = [
       { key: 'config_business_lines', label: '项目管理' },
       { key: 'config_keywords', label: '关键词管理' },
       { key: 'config_prompt_templates', label: '提示词管理' },
-      { key: 'config_ai_models', label: 'AI模型配置' },
+      { key: 'config_ai_models', label: '模型配置' },
     ],
   },
   {

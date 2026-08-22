@@ -38,7 +38,8 @@ const routes: Array<RouteRecordRaw> = [
         name: 'task_report',
         meta: {
           title: '任务报告',
-          hideMenu: true,
+          hideMenu: true, // 权限过滤时始终保留路由（通过任务列表/详情跳转访问）
+          hidden: true, // 侧边栏菜单中隐藏（依赖 :id 参数，无法作为独立菜单打开）
         },
         component: () => import('@/views/tasks/report/index.vue'),
       },
@@ -47,7 +48,8 @@ const routes: Array<RouteRecordRaw> = [
         name: 'task_detail',
         meta: {
           title: '任务详情',
-          hideMenu: true,
+          hideMenu: true, // 权限过滤时始终保留路由（通过任务列表跳转访问）
+          hidden: true, // 侧边栏菜单中隐藏（依赖 :id 参数，无法作为独立菜单打开）
         },
         component: () => import('@/views/tasks/detail/index.vue'),
       },

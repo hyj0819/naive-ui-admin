@@ -138,6 +138,19 @@
           <n-form-item label="排除作者">
             <n-switch v-model:value="scrapeForm.exclude_author" />
           </n-form-item>
+          <n-form-item label="执行账号">
+            <div class="field-block">
+              <n-select
+                v-model:value="scrapeForm.account_id"
+                placeholder="选择账号（使用指纹浏览器）"
+                :options="accountOptions"
+                clearable
+              />
+              <div class="form-help mt-1">
+                选择已配置指纹浏览器的账号，任务将使用对应的浏览器执行
+              </div>
+            </div>
+          </n-form-item>
         </n-form>
 
         <!-- 私信任务配置 -->
@@ -256,6 +269,9 @@
           <n-descriptions-item v-if="selectedType === 'scrape'" label="AI筛选">
             {{ scrapeForm.ai_filter_enabled ? '启用' : '关闭' }}
           </n-descriptions-item>
+          <n-descriptions-item v-if="selectedType === 'scrape' && scrapeForm.account_id" label="执行账号">
+            {{ accountList.find((a) => a.id === scrapeForm.account_id)?.account_name || '-' }}
+          </n-descriptions-item>
           <n-descriptions-item v-if="selectedType === 'message'" label="目标用户">
             {{ messageForm.target_contact_ids.length }} 人
           </n-descriptions-item>
@@ -311,6 +327,7 @@ import { getBusinessLineListRaw, type BusinessLine } from '@/api/config/business
 import { getKeywordList, type Keyword } from '@/api/config/keywords';
 import { getPromptTemplateList, type PromptTemplate } from '@/api/config/promptTemplates';
 import { getContactList, type Contact } from '@/api/contacts';
+import { getAccountList, type Account } from '@/api/system/accounts';
 import {
   BugOutlined,
   MessageOutlined,
@@ -336,6 +353,7 @@ const businessLineList = ref<BusinessLine[]>([]);
 const keywordList = ref<Keyword[]>([]);
 const promptList = ref<PromptTemplate[]>([]);
 const contactList = ref<Contact[]>([]);
+const accountList = ref<Account[]>([]);
 
 const taskTypes = [
   { value: 'scrape', label: '关键词爬虫', desc: '搜索关键词爬取评论，AI筛选潜在客户', icon: BugOutlined },
@@ -355,6 +373,7 @@ const scrapeForm = reactive<CreateScrapeTaskRequest>({
   ai_filter_enabled: true,
   ai_prompt_template_id: undefined,
   exclude_author: true,
+  account_id: undefined,
 });
 
 const messageForm = reactive<CreateMessageTaskRequest>({
@@ -404,6 +423,15 @@ const contactOptions = computed(() =>
     .map((c) => ({
       label: `${c.username || c.platform_user_id}`,
       value: c.id,
+    }))
+);
+
+const accountOptions = computed(() =>
+  accountList.value
+    .filter((a) => a.status === 1)
+    .map((a) => ({
+      label: `${a.account_name}${a.browser_id ? ` (${a.platform_name})` : ''}`,
+      value: a.id,
     }))
 );
 
@@ -469,6 +497,8 @@ const validationTip = computed(() => {
 
 onMounted(async () => {
   businessLineList.value = await getBusinessLineListRaw();
+  const accountRes = await getAccountList({ status: 1 });
+  accountList.value = accountRes.list;
 });
 
 function onBusinessLineChange(blId: number) {

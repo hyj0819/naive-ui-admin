@@ -196,7 +196,7 @@ const columns = [
 ];
 
 const actionColumn = reactive({
-  width: 240,
+  width: 280,
   title: '操作',
   key: 'action',
   fixed: 'right' as const,
@@ -205,6 +205,11 @@ const actionColumn = reactive({
       style: 'button',
       actions: [
         { label: '详情', onClick: () => handleDetail(record) },
+        {
+          label: '报告',
+          onClick: () => handleReport(record),
+          ifShow: () => ['success', 'failed', 'cancelled'].includes(record.status),
+        },
         {
           label: '启动',
           onClick: () => handleStart(record),
@@ -269,6 +274,10 @@ function goCreate() {
 
 function handleDetail(record: TaskExecution) {
   router.push(`/tasks/${record.id}`);
+}
+
+function handleReport(record: TaskExecution) {
+  router.push(`/tasks/${record.id}/report`);
 }
 
 async function handleStart(record: TaskExecution) {

@@ -316,9 +316,14 @@ async function handleDeactivate(record: AIModel) {
 
 async function handleTest(record: AIModel) {
   try {
-    await testAiModel(record.id);
-    message.success('测试成功');
-  } catch (error) {
+    const response: any = await testAiModel(record.id);
+    if (response.success === true) {
+      message.success('测试成功');
+    } else {
+      message.error(response.response || '测试失败');
+    }
+  } catch (error: any) {
+    message.error(error.message || '测试失败');
   }
 }
 </script>

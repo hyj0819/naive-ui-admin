@@ -52,7 +52,7 @@ const routes: Array<RouteRecordRaw> = [
         path: 'ai-models',
         name: 'config_ai_models',
         meta: {
-          title: 'AI模型配置',
+          title: '模型配置',
         },
         component: () => import('@/views/config/ai-models/index.vue'),
       },

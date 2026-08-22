@@ -71,11 +71,6 @@ const applicationOptions = computed(() => {
 
 const columns = [
   {
-    title: '所属应用',
-    key: 'platform_name',
-    width: 120,
-  },
-  {
     title: '项目编码',
     key: 'code',
     width: 120,
@@ -84,6 +79,11 @@ const columns = [
     title: '项目名称',
     key: 'name',
     width: 150,
+  },
+  {
+    title: '所属应用',
+    key: 'platform_name',
+    width: 120,
   },
   {
     title: '状态',

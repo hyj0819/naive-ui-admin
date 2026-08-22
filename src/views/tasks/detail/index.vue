@@ -858,40 +858,54 @@ onUnmounted(() => {
 }
 
 .log-scroll {
-  background: #1e1e1e;
+  background: #1a1a2e;
   border-radius: 8px;
-  padding: 8px 12px;
+  padding: 12px 16px;
 }
 
 .log-list {
   font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
-  font-size: 13px;
+  font-size: 14px;
+  line-height: 1.7;
 }
 
 .log-item {
-  padding: 4px 6px;
+  padding: 5px 8px;
   border-radius: 4px;
   display: flex;
   align-items: flex-start;
-  color: #d4d4d4;
+  color: #e8e8e8;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.06);
+  }
 
   &.error {
-    color: #ff7875;
+    color: #ff6b6b;
+    background-color: rgba(255, 107, 107, 0.08);
   }
 
   &.warn {
-    color: #ffd666;
+    color: #ffd93d;
+  }
+
+  &.info {
+    color: #a8d8ea;
   }
 }
 
 .log-level-tag {
   flex-shrink: 0;
+  font-size: 11px;
+  padding: 1px 6px;
 }
 
 .log-time {
-  color: #6a9955;
+  color: #7bed9f;
   white-space: nowrap;
   min-width: 170px;
+  font-weight: 500;
 }
 
 .log-msg {
