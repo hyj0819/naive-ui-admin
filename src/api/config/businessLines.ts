@@ -60,3 +60,23 @@ export function updateBusinessLine(id: number, data: UpdateBusinessLineRequest) 
 export function deleteBusinessLine(id: number) {
   return Alova.Delete(`/config/business-lines/${id}`);
 }
+
+// ==================== 商家信息 ====================
+
+export interface BusinessProfile {
+  phone?: string;
+  wechat?: string;
+  shop_name?: string;
+  shop_address?: string;
+  site_url?: string;
+}
+
+/** 读取项目商家信息 */
+export function getBusinessProfile(id: number) {
+  return Alova.Get<BusinessProfile>(`/config/business-lines/${id}/business-profile`).then((res: any) => res?.result || res || {});
+}
+
+/** 更新项目商家信息 */
+export function updateBusinessProfile(id: number, data: BusinessProfile) {
+  return Alova.Put<BusinessProfile>(`/config/business-lines/${id}/business-profile`, data).then((res: any) => res?.result || res || {});
+}

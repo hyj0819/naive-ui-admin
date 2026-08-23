@@ -25,30 +25,6 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import('@/views/config/platforms/index.vue'),
       },
       {
-        path: 'business-lines',
-        name: 'config_business_lines',
-        meta: {
-          title: '项目管理',
-        },
-        component: () => import('@/views/config/business-lines/index.vue'),
-      },
-      {
-        path: 'keywords',
-        name: 'config_keywords',
-        meta: {
-          title: '关键词管理',
-        },
-        component: () => import('@/views/config/keywords/index.vue'),
-      },
-      {
-        path: 'prompt-templates',
-        name: 'config_prompt_templates',
-        meta: {
-          title: '提示词管理',
-        },
-        component: () => import('@/views/config/prompt-templates/index.vue'),
-      },
-      {
         path: 'ai-models',
         name: 'config_ai_models',
         meta: {

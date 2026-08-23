@@ -8,7 +8,7 @@
             <n-select
               v-model:value="filterBusinessLineId"
               :options="businessLineOptions"
-              placeholder="全部业务线"
+              placeholder="全部项目"
               clearable
               style="width: 180px"
               @update:value="loadData"
@@ -59,12 +59,12 @@
       <div ref="funnelChartRef" style="height: 320px"></div>
     </n-card>
 
-    <!-- 底部：平台分布 + 业务线对比 -->
+    <!-- 底部：平台分布 + 项目对比 -->
     <div class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
       <n-card class="proCard" title="平台用户分布">
         <div ref="platformPieRef" style="height: 280px"></div>
       </n-card>
-      <n-card class="proCard" title="业务线对比">
+      <n-card class="proCard" title="项目对比">
         <div ref="businessBarRef" style="height: 280px"></div>
       </n-card>
     </div>

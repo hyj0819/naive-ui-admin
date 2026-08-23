@@ -10,7 +10,7 @@
       <n-space vertical :size="12">
         <n-space align="center">
           <n-select v-model:value="filterParams.platform_id" placeholder="平台" clearable :options="platformOptions" style="width: 140px" />
-          <n-select v-model:value="filterParams.business_line_id" placeholder="业务线" clearable :options="businessLineOptions" style="width: 160px" />
+          <n-select v-model:value="filterParams.business_line_id" placeholder="项目" clearable :options="businessLineOptions" style="width: 160px" />
           <n-select v-model:value="filterParams.contact_status" placeholder="触达状态" clearable :options="contactStatusOptions" style="width: 130px" />
           <n-input v-model:value="filterParams.keyword" placeholder="搜索用户名" clearable style="width: 160px" @keyup.enter="handleSearch" />
           <n-button type="primary" @click="handleSearch">搜索</n-button>
@@ -48,7 +48,7 @@
             <n-descriptions-item label="用户名">{{ currentContact.username || '-' }}</n-descriptions-item>
             <n-descriptions-item label="平台用户ID">{{ currentContact.platform_user_id }}</n-descriptions-item>
             <n-descriptions-item label="平台">{{ currentContact.platform_name }}</n-descriptions-item>
-            <n-descriptions-item label="业务线">{{ currentContact.business_line_name }}</n-descriptions-item>
+            <n-descriptions-item label="所属项目">{{ currentContact.business_line_name }}</n-descriptions-item>
             <n-descriptions-item label="主页链接">
               <n-a v-if="currentContact.profile_url" :href="currentContact.profile_url" target="_blank">{{ currentContact.profile_url }}</n-a>
               <span v-else>-</span>
@@ -147,7 +147,7 @@ function interactionTimelineType(type: string): 'default' | 'info' | 'success' |
 const columns = [
   { title: '用户名', key: 'username', width: 130, ellipsis: true },
   { title: '平台', key: 'platform_name', width: 100 },
-  { title: '业务线', key: 'business_line_name', width: 120 },
+  { title: '项目', key: 'business_line_name', width: 120 },
   {
     title: '触达状态', key: 'contact_status', width: 100,
     render(row: Contact) {

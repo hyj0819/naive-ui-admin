@@ -4,6 +4,9 @@ export interface Platform {
   id: number;
   code: string;
   name: string;
+  description: string;
+  icon: string;
+  reach_strategy: string;
   status: number;
   config: string;
   created_at: string;
@@ -13,6 +16,9 @@ export interface Platform {
 export interface CreatePlatformRequest {
   code?: string;
   name: string;
+  description?: string;
+  icon?: string;
+  reach_strategy?: string;
   status?: number;
   config?: string;
 }
@@ -20,6 +26,9 @@ export interface CreatePlatformRequest {
 export interface UpdatePlatformRequest {
   code?: string;
   name?: string;
+  description?: string;
+  icon?: string;
+  reach_strategy?: string;
   status?: number;
   config?: string;
 }
@@ -55,4 +64,10 @@ export function updatePlatform(id: number, data: UpdatePlatformRequest) {
 
 export function deletePlatform(id: number) {
   return Alova.Delete(`/config/platforms/${id}`);
+}
+
+export function uploadPlatformIcon(file: File) {
+  const formData = new FormData();
+  formData.append('file', file);
+  return Alova.Post<{ url: string }>('/config/platforms/upload-icon', formData);
 }

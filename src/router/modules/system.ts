@@ -13,7 +13,7 @@ const routes: Array<RouteRecordRaw> = [
     meta: {
       title: '系统管理',
       icon: renderIcon(ToolOutlined),
-      sort: 5,
+      sort: 6,
     },
     children: [
       {
@@ -47,6 +47,14 @@ const routes: Array<RouteRecordRaw> = [
           title: '操作日志',
         },
         component: () => import('@/views/system/operation-logs/index.vue'),
+      },
+      {
+        path: 'configs',
+        name: 'system_configs',
+        meta: {
+          title: '参数管理',
+        },
+        component: () => import('@/views/system/configs/index.vue'),
       },
     ],
   },

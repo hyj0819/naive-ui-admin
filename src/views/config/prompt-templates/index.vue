@@ -28,8 +28,8 @@
 
     <n-modal v-model:show="showModal" :show-icon="false" preset="dialog" :title="modalTitle" :style="{ width: '740px' }">
       <n-form :model="formData" :label-width="100" class="mt-4">
-          <n-form-item label="所属业务线">
-            <n-select v-model:value="formData.business_line_id" placeholder="请选择业务线" :options="businessLineOptions" />
+          <n-form-item label="所属项目">
+            <n-select v-model:value="formData.business_line_id" placeholder="请选择项目" :options="businessLineOptions" />
           </n-form-item>
           <n-form-item label="模板名称">
             <n-input v-model:value="formData.name" placeholder="请输入模板名称" />
@@ -80,7 +80,7 @@ const businessLineOptions = computed(() => {
 
 const columns = [
   {
-    title: '所属业务线',
+    title: '所属项目',
     key: 'business_line_name',
     width: 180,
   },

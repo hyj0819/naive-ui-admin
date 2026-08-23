@@ -45,12 +45,24 @@
           </div>
         </n-card>
 
-        <n-card :bordered="false" size="small" title="最近任务" class="mt-4">
+        <n-card :bordered="false" size="small" class="mt-4">
+          <template #header>
+            <div class="flex items-center justify-between">
+              <span>最近任务</span>
+              <n-button text type="primary" size="small" @click="router.push('/tasks/list')">
+                查看全部
+              </n-button>
+            </div>
+          </template>
           <n-list v-if="recentTasks.length > 0">
             <n-list-item v-for="task in recentTasks" :key="task.id">
-              <n-thing :title="getTaskTypeLabel(task.task_type)" :description="task.created_at">
+              <n-thing :title="getTaskTypeLabel(task.task_type)" :description="task.business_line_name + ' · ' + task.created_at">
                 <template #header-extra>
-                  <n-tag :type="getTaskStatusType(task.status)">{{ getTaskStatusLabel(task.status) }}</n-tag>
+                  <div class="flex items-center gap-2">
+                    <n-tag :type="getTaskStatusType(task.status)" size="small">{{ getTaskStatusLabel(task.status) }}</n-tag>
+                    <n-button text type="primary" size="small" @click="goToTask(task)">详情</n-button>
+                    <n-button text type="error" size="small" @click="handleDeleteTask(task)">删除</n-button>
+                  </div>
                 </template>
               </n-thing>
             </n-list-item>
@@ -74,12 +86,20 @@
             </div>
           </div>
         </n-card>
-        <n-card :bordered="false" size="small" title="热门关键词" class="mt-4">
+        <n-card :bordered="false" size="small" class="mt-4">
+          <template #header>
+            <div class="flex items-center justify-between">
+              <span>热门关键词</span>
+              <n-button text type="primary" size="small" @click="router.push('/project/keywords')">
+                详情
+              </n-button>
+            </div>
+          </template>
           <n-list v-if="topKeywords.length > 0">
             <n-list-item v-for="kw in topKeywords" :key="kw.keyword">
               <n-thing :title="kw.keyword" :description="kw.business_line_name">
                 <template #header-extra>
-                  <n-tag>{{ kw.matched_contents }}</n-tag>
+                  <n-tag size="small">{{ kw.matched_contents }} 条内容</n-tag>
                 </template>
               </n-thing>
             </n-list-item>
@@ -97,8 +117,15 @@
 
 <script lang="ts" setup>
   import { reactive, ref, computed, onMounted } from 'vue';
+  import { useRouter } from 'vue-router';
+  import { useMessage, useDialog } from 'naive-ui';
   import schoolboy from '@/assets/images/schoolboy.png';
   import { getOverviewStats, getRecentTasks, getTopKeywords, type OverviewStats, type RecentTask, type TopKeyword } from '@/api/stats';
+  import { deleteTask } from '@/api/tasks';
+
+  const router = useRouter();
+  const message = useMessage();
+  const dialog = useDialog();
 
   const overviewStats = reactive<OverviewStats>({
     total_contents: 0,
@@ -122,21 +149,24 @@
 
   function getTaskTypeLabel(taskType: string) {
     const typeMap: Record<string, string> = {
-      content_collect: '内容采集',
-      ai_analysis: 'AI分析',
-      contact: '用户触达',
-      content_generate: '内容生成',
+      scrape: '爬虫任务',
+      reach: '触达任务',
+      message: '私信任务',
+      reply: '评论回复',
     };
     return typeMap[taskType] || taskType;
   }
 
   function getTaskStatusLabel(status: string) {
     const statusMap: Record<string, string> = {
-      pending: '待执行',
+      pending: '待启动',
+      queued: '排队中',
       running: '执行中',
+      success: '已完成',
       completed: '已完成',
       partial: '部分完成',
       failed: '失败',
+      cancelled: '已取消',
     };
     return statusMap[status] || status;
   }
@@ -144,12 +174,37 @@
   function getTaskStatusType(status: string): 'warning' | 'info' | 'success' | 'error' {
     const typeMap: Record<string, 'warning' | 'info' | 'success' | 'error'> = {
       pending: 'warning',
+      queued: 'info',
       running: 'info',
+      success: 'success',
       completed: 'success',
-      partial: 'info',
+      partial: 'warning',
       failed: 'error',
+      cancelled: 'default',
     };
     return typeMap[status] || 'info';
+  }
+
+  function goToTask(task: RecentTask) {
+    router.push(`/tasks/${task.id}`);
+  }
+
+  function handleDeleteTask(task: RecentTask) {
+    dialog.warning({
+      title: '确认删除',
+      content: `确定删除任务「${getTaskTypeLabel(task.task_type)}」吗？`,
+      positiveText: '删除',
+      negativeText: '取消',
+      onPositiveClick: async () => {
+        try {
+          await deleteTask(task.id);
+          message.success('删除成功');
+          recentTasks.value = await getRecentTasks({ limit: 5 });
+        } catch {
+          message.error('删除失败');
+        }
+      },
+    });
   }
 
   onMounted(async () => {

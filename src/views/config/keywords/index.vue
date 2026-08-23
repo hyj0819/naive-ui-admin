@@ -2,7 +2,7 @@
   <div>
     <div class="n-layout-page-header">
       <n-card :bordered="false" title="关键词管理">
-        管理各业务线下的搜索关键词
+        管理各项目下的搜索关键词
       </n-card>
     </div>
     <n-card :bordered="false" class="mt-4 proCard">
@@ -28,8 +28,8 @@
 
     <n-modal v-model:show="showModal" :show-icon="false" preset="dialog" :title="modalTitle">
       <n-form :model="formData" :label-width="100" class="mt-4">
-        <n-form-item label="所属业务线">
-          <n-select v-model:value="formData.business_line_id" placeholder="请选择业务线" :options="businessLineOptions" />
+        <n-form-item label="所属项目">
+          <n-select v-model:value="formData.business_line_id" placeholder="请选择项目" :options="businessLineOptions" />
         </n-form-item>
         <n-form-item label="关键词">
           <n-input v-model:value="formData.keywordsText" type="textarea" placeholder="每行一个关键词，也可用逗号分隔" :rows="5" />
@@ -74,7 +74,7 @@ const businessLineOptions = computed(() => {
 
 const columns = [
   {
-    title: '所属业务线',
+    title: '所属项目',
     key: 'business_line_name',
     width: 180,
   },
@@ -157,7 +157,7 @@ function handleEdit(record: Keyword) {
 
 async function submitForm() {
   if (!formData.business_line_id) {
-    message.warning('请选择所属业务线');
+    message.warning('请选择所属项目');
     return;
   }
   formLoading.value = true;

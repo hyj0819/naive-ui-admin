@@ -2,18 +2,17 @@
   <div>
     <div class="n-layout-page-header">
       <n-card :bordered="false" title="创建任务">
-        创建爬虫、私信或评论回复任务
+        创建爬虫或触达任务，系统将根据平台规则自动选择最佳触达方式
       </n-card>
     </div>
     <n-card :bordered="false" class="mt-4 proCard">
       <!-- 步骤条 -->
       <n-steps :current="currentStep" size="small" class="mb-6">
-        <n-step title="选择类型" />
+        <n-step title="选择目标" />
         <n-step title="配置参数" />
-        <n-step title="确认启动" />
       </n-steps>
 
-      <!-- 步骤一：选择任务类型 -->
+      <!-- 步骤一：选择目标 -->
       <div v-if="currentStep === 1" class="type-cards">
         <n-card
           v-for="item in taskTypes"
@@ -37,40 +36,30 @@
       <div v-if="currentStep === 2">
         <!-- 爬虫任务配置 -->
         <n-form v-if="selectedType === 'scrape'" :label-width="120" label-placement="left">
-          <n-form-item label="任务名称">
-            <n-input v-model:value="scrapeForm.task_name" placeholder="可选，留空自动生成" />
-          </n-form-item>
-          <n-form-item label="业务线" required>
+          <n-form-item label="所属项目" required>
             <n-select
               v-model:value="scrapeForm.business_line_id"
-              placeholder="请选择业务线"
+              placeholder="请选择项目"
               :options="businessLineOptions"
               @update:value="onBusinessLineChange"
             />
           </n-form-item>
-          <n-form-item label="关键词" required>
+          <n-form-item label="关键词" v-if="scrapeForm.business_line_id">
             <div class="field-block">
-              <n-dynamic-tags v-model:value="scrapeForm.keywords" />
-              <div class="form-help mt-1">
-                输入关键词后按回车添加，或从下方常用关键词中快速选择
-              </div>
-              <div v-if="scrapeForm.business_line_id" class="mt-2">
-                <template v-if="availableKeywords.length">
-                  <span class="preset-label">常用关键词：</span>
-                  <n-tag
-                    v-for="kw in availableKeywords"
-                    :key="kw.id"
-                    size="small"
-                    class="mr-1 mt-1"
-                    checkable
-                    :checked="scrapeForm.keywords.includes(kw.keyword)"
-                    @click="toggleKeyword(kw.keyword)"
-                  >
-                    {{ kw.keyword }}
-                  </n-tag>
-                </template>
-                <span v-else class="form-help">该业务线暂无预设关键词，可直接手动输入</span>
-              </div>
+              <n-space v-if="availableKeywords.length" size="small" class="mt-1">
+                <n-tag v-for="kw in availableKeywords" :key="kw.id" size="small">
+                  {{ kw.keyword }}
+                </n-tag>
+              </n-space>
+              <span v-else class="form-help">该项目暂无已配置的关键词，请先在项目中心添加</span>
+            </div>
+          </n-form-item>
+          <n-form-item label="筛选提示词" v-if="scrapeForm.business_line_id">
+            <div class="field-block">
+              <n-tag v-if="activePrompt" size="small" type="success">
+                {{ activePrompt.name }} (v{{ activePrompt.version }})
+              </n-tag>
+              <span v-else class="form-help">该项目暂无已激活的提示词模板，将使用系统默认筛选逻辑</span>
             </div>
           </n-form-item>
           <n-form-item label="内容类型" required>
@@ -88,51 +77,13 @@
           <n-form-item label="每视频评论上限" v-if="scrapeForm.content_types.includes('comment')">
             <div class="field-block">
               <n-input-number v-model:value="scrapeForm.max_comments_per_video" :min="0" :max="500" style="width: 200px" />
-              <div class="form-help mt-1">
-                0=不限制；测试时填小值，例如 5
-              </div>
-            </div>
-          </n-form-item>
-          <n-form-item label="超时时间">
-            <div class="field-block">
-              <n-input-number v-model:value="scrapeForm.timeout_seconds" :min="10" :max="300" style="width: 200px" />
-              <span class="ml-2 text-gray-500">秒</span>
-              <div class="form-help mt-1">
-                页面操作超时时间，默认60秒；网络条件较差时可适当调大
-              </div>
-            </div>
-          </n-form-item>
-          <n-form-item label="测试模式">
-            <div class="field-block">
-              <n-switch v-model:value="testMode" />
-              <div class="form-help mt-1">仅采集极少量数据用于跑通流程（自动设为 max_items_per_keyword=2、max_comments_per_video=5）</div>
+              <div class="form-help mt-1">0=不限制；测试时填小值，例如 5</div>
             </div>
           </n-form-item>
           <n-form-item label="最大采集数/关键词">
             <div class="field-block">
               <n-input-number v-model:value="scrapeForm.max_items_per_keyword" :min="1" :max="500" style="width: 200px" />
-              <div class="form-help mt-1">
-                预计采集总量约 {{ scrapeForm.keywords.length * scrapeForm.max_items_per_keyword }} 条（关键词数 × 单词采集数）
-              </div>
-            </div>
-          </n-form-item>
-          <n-form-item label="启用AI筛选">
-            <div class="field-block">
-              <n-switch v-model:value="scrapeForm.ai_filter_enabled" />
-              <div class="form-help mt-1">开启后由 AI 判断内容是否为潜在客户，过滤无关数据</div>
-            </div>
-          </n-form-item>
-          <n-form-item v-if="scrapeForm.ai_filter_enabled" label="筛选提示词">
-            <div class="field-block">
-              <n-select
-                v-model:value="scrapeForm.ai_prompt_template_id"
-                placeholder="选择提示词模板（不选则使用默认筛选逻辑）"
-                :options="promptOptions"
-                clearable
-              />
-              <div v-if="scrapeForm.business_line_id && promptOptions.length === 0" class="form-help mt-1">
-                该业务线暂无可用提示词模板，将使用系统默认筛选逻辑
-              </div>
+              <div class="form-help mt-1">预计采集总量约 {{ scrapeForm.keywords.length * scrapeForm.max_items_per_keyword }} 条</div>
             </div>
           </n-form-item>
           <n-form-item label="排除作者">
@@ -142,168 +93,148 @@
             <div class="field-block">
               <n-select
                 v-model:value="scrapeForm.account_id"
-                placeholder="选择账号（使用指纹浏览器）"
+                placeholder="选择执行此任务的浏览器账号"
                 :options="accountOptions"
                 clearable
               />
-              <div class="form-help mt-1">
-                选择已配置指纹浏览器的账号，任务将使用对应的浏览器执行
-              </div>
+              <div class="form-help mt-1">选择已配置的指纹浏览器账号，任务将使用该浏览器环境执行</div>
             </div>
           </n-form-item>
         </n-form>
 
-        <!-- 私信任务配置 -->
-        <n-form v-if="selectedType === 'message'" :label-width="120" label-placement="left">
-          <n-form-item label="任务名称">
-            <n-input v-model:value="messageForm.task_name" placeholder="可选，留空自动生成" />
-          </n-form-item>
-          <n-form-item label="业务线" required>
+        <!-- 触达任务配置 -->
+        <n-form v-if="selectedType === 'reach'" :label-width="120" label-placement="left">
+          <n-form-item label="所属项目" required>
             <n-select
-              v-model:value="messageForm.business_line_id"
-              placeholder="请选择业务线"
+              v-model:value="reachForm.business_line_id"
+              placeholder="请选择项目"
               :options="businessLineOptions"
-              @update:value="onMessageBusinessLineChange"
+              @update:value="onReachBusinessLineChange"
             />
           </n-form-item>
-          <n-form-item label="目标用户" required>
-            <div class="field-block">
-              <n-select
-                v-model:value="messageForm.target_contact_ids"
-                multiple
-                placeholder="选择目标用户"
-                :options="contactOptions"
-                :max-tag-count="5"
-                filterable
+          <n-form-item label="目标用户" required v-if="reachForm.business_line_id">
+            <div class="field-block" style="width: 100%">
+              <div class="flex items-center justify-between mb-2">
+                <n-space>
+                  <n-radio-group v-model:value="contactFilter" size="small" @update:value="loadReachContacts">
+                    <n-radio-button value="all">全部</n-radio-button>
+                    <n-radio-button value="pending">待联系</n-radio-button>
+                    <n-radio-button value="contacted">已联系</n-radio-button>
+                  </n-radio-group>
+                </n-space>
+                <n-space>
+                  <n-button size="small" @click="selectAllContacts">全选当前页</n-button>
+                  <n-text depth="3">已选 {{ reachForm.target_contact_ids.length }} 人</n-text>
+                </n-space>
+              </div>
+              <n-data-table
+                :columns="contactColumns"
+                :data="contactTableData"
+                :row-key="(row: Contact) => row.id"
+                @update:checked-row-keys="onContactCheck"
+                :checked-row-keys="reachForm.target_contact_ids"
+                :bordered="true"
+                size="small"
+                :pagination="{ pageSize: 10 }"
+                max-height="320"
+                virtual-scroll
               />
-              <div class="form-help mt-1">
-                <template v-if="messageForm.business_line_id && contactOptions.length === 0">
-                  该业务线暂无可触达的联系人（需状态为待联系/已联系）
-                </template>
-                <template v-else>已选 {{ messageForm.target_contact_ids.length }} 人</template>
+              <div class="form-help mt-1" v-if="contactTableData.length === 0">
+                该项目暂无可触达的联系人
               </div>
             </div>
           </n-form-item>
           <n-form-item label="消息模式">
-            <n-radio-group v-model:value="messageForm.message_mode">
+            <n-radio-group v-model:value="reachForm.message_mode">
               <n-space>
                 <n-radio value="personalized">个性化生成</n-radio>
                 <n-radio value="fixed">固定话术</n-radio>
               </n-space>
             </n-radio-group>
           </n-form-item>
-          <n-form-item v-if="messageForm.message_mode === 'personalized'" label="生成提示词">
-            <n-select
-              v-model:value="messageForm.prompt_template_id"
-              placeholder="选择提示词模板"
-              :options="promptOptions"
-              clearable
-            />
+          <n-form-item v-if="reachForm.message_mode === 'fixed'" label="固定话术">
+            <n-input v-model:value="reachForm.fixed_message" type="textarea" :rows="3" placeholder="输入固定消息内容" />
           </n-form-item>
-          <n-form-item v-if="messageForm.message_mode === 'fixed'" label="固定话术">
-            <n-input v-model:value="messageForm.fixed_message" type="textarea" :rows="3" placeholder="输入固定消息内容" />
+          <n-form-item label="附带商家信息" v-if="reachForm.business_line_id">
+            <div class="field-block">
+              <n-radio-group v-model:value="reachForm.include_business_info">
+                <n-space>
+                  <n-radio :value="false">不附带</n-radio>
+                  <n-radio :value="true">附带</n-radio>
+                </n-space>
+              </n-radio-group>
+              <div v-if="reachForm.include_business_info && hasBusinessProfile" class="mt-2">
+                <div class="form-help mb-1">选择需要附带的字段：</div>
+                <n-checkbox-group v-model:value="reachForm.business_info_fields">
+                  <n-space>
+                    <n-checkbox value="phone" :disabled="!businessProfile.phone">联系电话</n-checkbox>
+                    <n-checkbox value="wechat" :disabled="!businessProfile.wechat">微信号</n-checkbox>
+                    <n-checkbox value="shop_name" :disabled="!businessProfile.shop_name">店铺名称</n-checkbox>
+                    <n-checkbox value="shop_address" :disabled="!businessProfile.shop_address">店铺地址</n-checkbox>
+                    <n-checkbox value="site_url" :disabled="!businessProfile.site_url">独立站地址</n-checkbox>
+                  </n-space>
+                </n-checkbox-group>
+                <div class="form-help mt-1" v-if="reachForm.business_info_fields.length > 0">
+                  预览：消息末尾将附上 {{ fieldLabels(reachForm.business_info_fields) }}
+                </div>
+              </div>
+              <div v-if="reachForm.include_business_info && !hasBusinessProfile" class="form-help mt-1" style="color: #f0a020">
+                该项目尚未配置商家信息，请先在「项目中心 → 配置 → 商家信息」中维护
+              </div>
+            </div>
           </n-form-item>
-          <n-form-item label="发送上限">
-            <n-input-number v-model:value="messageForm.max_send_count" :min="1" :max="500" />
-          </n-form-item>
-          <n-form-item label="发送间隔(分钟)">
-            <n-space>
-              <n-input-number v-model:value="messageForm.send_interval_min" :min="1" :max="60" style="width: 120px" />
-              <span>-</span>
-              <n-input-number v-model:value="messageForm.send_interval_max" :min="1" :max="60" style="width: 120px" />
-            </n-space>
+          <n-form-item label="执行账号">
+            <div class="field-block">
+              <n-select
+                v-model:value="reachForm.account_id"
+                placeholder="选择执行此任务的浏览器账号"
+                :options="accountOptions"
+                clearable
+              />
+            </div>
           </n-form-item>
         </n-form>
 
-        <!-- 评论回复任务配置 -->
-        <n-form v-if="selectedType === 'reply'" :label-width="120" label-placement="left">
-          <n-form-item label="任务名称">
-            <n-input v-model:value="replyForm.task_name" placeholder="可选，留空自动生成" />
-          </n-form-item>
-          <n-form-item label="业务线" required>
-            <n-select
-              v-model:value="replyForm.business_line_id"
-              placeholder="请选择业务线"
-              :options="businessLineOptions"
-              @update:value="onReplyBusinessLineChange"
-            />
-          </n-form-item>
-          <n-form-item label="关键词" required>
-            <n-dynamic-tags v-model:value="replyForm.keywords" />
-          </n-form-item>
-          <n-form-item label="回复提示词">
-            <n-select
-              v-model:value="replyForm.prompt_template_id"
-              placeholder="选择提示词模板"
-              :options="promptOptions"
-              clearable
-            />
-          </n-form-item>
-          <n-form-item label="最大回复数">
-            <n-input-number v-model:value="replyForm.max_reply_count" :min="1" :max="200" />
-          </n-form-item>
-        </n-form>
-      </div>
-
-      <!-- 步骤三：确认 -->
-      <div v-if="currentStep === 3">
-        <n-alert type="info" :show-icon="true" class="mb-4">
-          请核对以下配置，确认无误后点击「立即启动」，任务将加入执行队列由 Worker 自动执行。
-        </n-alert>
-        <n-descriptions title="任务摘要" bordered :column="1" label-placement="left">
-          <n-descriptions-item label="任务类型">{{ typeLabel }}</n-descriptions-item>
-          <n-descriptions-item label="任务名称">{{ taskNamePreview || '自动生成' }}</n-descriptions-item>
-          <n-descriptions-item label="业务线">{{ businessLinePreview }}</n-descriptions-item>
-          <n-descriptions-item v-if="selectedType === 'scrape'" label="关键词">
-            {{ scrapeForm.keywords.join('、') }}（{{ scrapeForm.keywords.length }} 个）
-          </n-descriptions-item>
-          <n-descriptions-item v-if="selectedType === 'scrape'" label="内容类型">
-            {{ scrapeContentTypesLabel }}
-          </n-descriptions-item>
-          <n-descriptions-item v-if="selectedType === 'scrape'" label="预计采集量">
-            {{ scrapeForm.keywords.length * scrapeForm.max_items_per_keyword }} 条
-          </n-descriptions-item>
-          <n-descriptions-item v-if="selectedType === 'scrape'" label="每视频评论上限">
-            {{ scrapeForm.max_comments_per_video === 0 ? '不限制' : scrapeForm.max_comments_per_video }} 条
-          </n-descriptions-item>
-          <n-descriptions-item v-if="selectedType === 'scrape'" label="AI筛选">
-            {{ scrapeForm.ai_filter_enabled ? '启用' : '关闭' }}
-          </n-descriptions-item>
-          <n-descriptions-item v-if="selectedType === 'scrape' && scrapeForm.account_id" label="执行账号">
-            {{ accountList.find((a) => a.id === scrapeForm.account_id)?.account_name || '-' }}
-          </n-descriptions-item>
-          <n-descriptions-item v-if="selectedType === 'message'" label="目标用户">
-            {{ messageForm.target_contact_ids.length }} 人
-          </n-descriptions-item>
-          <n-descriptions-item v-if="selectedType === 'message'" label="消息模式">
-            {{ messageForm.message_mode === 'personalized' ? '个性化生成' : '固定话术' }}
-          </n-descriptions-item>
-          <n-descriptions-item v-if="selectedType === 'message'" label="发送间隔">
-            {{ messageForm.send_interval_min }} - {{ messageForm.send_interval_max }} 分钟
-          </n-descriptions-item>
-          <n-descriptions-item v-if="selectedType === 'message'" label="发送上限">
-            {{ messageForm.max_send_count }} 条
-          </n-descriptions-item>
-          <n-descriptions-item v-if="selectedType === 'reply'" label="关键词">
-            {{ replyForm.keywords.join('、') }}（{{ replyForm.keywords.length }} 个）
-          </n-descriptions-item>
-          <n-descriptions-item v-if="selectedType === 'reply'" label="最大回复数">
-            {{ replyForm.max_reply_count }} 条
-          </n-descriptions-item>
-        </n-descriptions>
+        <!-- 可折叠配置摘要 -->
+        <n-collapse class="mt-4 mb-4" :default-expanded-names="[]">
+          <n-collapse-item title="配置摘要" name="summary">
+            <n-descriptions bordered :column="1" label-placement="left" size="small">
+              <n-descriptions-item label="任务目标">{{ typeLabel }}</n-descriptions-item>
+              <n-descriptions-item label="所属项目">{{ businessLinePreview }}</n-descriptions-item>
+              <n-descriptions-item v-if="selectedType === 'scrape'" label="关键词">
+                {{ scrapeForm.keywords.join('、') || '-' }}（{{ scrapeForm.keywords.length }} 个）
+              </n-descriptions-item>
+              <n-descriptions-item v-if="selectedType === 'scrape'" label="内容类型">
+                {{ scrapeContentTypesLabel }}
+              </n-descriptions-item>
+              <n-descriptions-item v-if="selectedType === 'scrape'" label="预计采集量">
+                {{ scrapeForm.keywords.length * scrapeForm.max_items_per_keyword }} 条
+              </n-descriptions-item>
+              <n-descriptions-item v-if="selectedType === 'reach'" label="目标用户">
+                {{ reachForm.target_contact_ids.length }} 人
+              </n-descriptions-item>
+              <n-descriptions-item v-if="selectedType === 'reach'" label="消息模式">
+                {{ reachForm.message_mode === 'personalized' ? '个性化生成（AI 自动）' : '固定话术' }}
+              </n-descriptions-item>
+              <n-descriptions-item v-if="selectedType === 'reach'" label="附带商家信息">
+                {{ reachForm.include_business_info && reachForm.business_info_fields?.length ? fieldLabels(reachForm.business_info_fields) : '不附带' }}
+              </n-descriptions-item>
+            </n-descriptions>
+          </n-collapse-item>
+        </n-collapse>
       </div>
 
       <!-- 底部操作按钮 -->
-      <div class="mt-8 flex items-center justify-between footer-bar">
+      <div class="mt-4 flex items-center justify-between footer-bar">
         <span class="valid-tip">{{ currentStep === 2 ? validationTip : '' }}</span>
         <n-space>
           <n-button @click="goBack">取消</n-button>
           <n-button v-if="currentStep > 1" @click="currentStep--">上一步</n-button>
-          <n-button v-if="currentStep < 3" type="primary" :disabled="!canNext" @click="currentStep++">
+          <n-button v-if="currentStep < 2" type="primary" :disabled="!canNext" @click="currentStep++">
             下一步
           </n-button>
-          <n-button v-if="currentStep === 3" type="primary" :loading="loading" @click="submitTask">
-            立即启动
+          <n-button v-if="currentStep === 2" type="primary" :loading="loading" :disabled="!canSubmit" @click="submitTask">
+            启动任务
           </n-button>
         </n-space>
       </div>
@@ -312,18 +243,16 @@
 </template>
 
 <script lang="ts" setup>
-import { reactive, ref, computed, onMounted, watch } from 'vue';
-import { useMessage } from 'naive-ui';
+import { reactive, ref, computed, onMounted, h } from 'vue';
+import { useMessage, NTag } from 'naive-ui';
 import { useRouter } from 'vue-router';
 import {
   createScrapeTask,
-  createMessageTask,
-  createReplyTask,
+  createReachTask,
   type CreateScrapeTaskRequest,
-  type CreateMessageTaskRequest,
-  type CreateReplyTaskRequest,
+  type CreateReachTaskRequest,
 } from '@/api/tasks';
-import { getBusinessLineListRaw, type BusinessLine } from '@/api/config/businessLines';
+import { getBusinessLineListRaw, getBusinessProfile, type BusinessLine, type BusinessProfile } from '@/api/config/businessLines';
 import { getKeywordList, type Keyword } from '@/api/config/keywords';
 import { getPromptTemplateList, type PromptTemplate } from '@/api/config/promptTemplates';
 import { getContactList, type Contact } from '@/api/contacts';
@@ -331,7 +260,6 @@ import { getAccountList, type Account } from '@/api/system/accounts';
 import {
   BugOutlined,
   MessageOutlined,
-  CommentOutlined,
 } from '@vicons/antd';
 
 const router = useRouter();
@@ -339,26 +267,16 @@ const message = useMessage();
 const loading = ref(false);
 const currentStep = ref(1);
 const selectedType = ref('scrape');
-const testMode = ref(false);
-
-watch(testMode, (val) => {
-  if (val) {
-    scrapeForm.max_items_per_keyword = 2;
-    scrapeForm.max_comments_per_video = 5;
-  }
-});
 
 // 数据源
 const businessLineList = ref<BusinessLine[]>([]);
 const keywordList = ref<Keyword[]>([]);
 const promptList = ref<PromptTemplate[]>([]);
-const contactList = ref<Contact[]>([]);
 const accountList = ref<Account[]>([]);
 
 const taskTypes = [
-  { value: 'scrape', label: '关键词爬虫', desc: '搜索关键词爬取评论，AI筛选潜在客户', icon: BugOutlined },
-  { value: 'message', label: '私信触达', desc: '向筛选出的用户发送个性化私信', icon: MessageOutlined },
-  { value: 'reply', label: '评论自动回复', desc: '自动回复目标用户的评论', icon: CommentOutlined },
+  { value: 'scrape', label: '采集内容', desc: '搜索关键词，AI 筛选潜在客户', icon: BugOutlined },
+  { value: 'reach', label: '触达用户', desc: '联系已采集的潜在客户，系统自动选择最佳方式', icon: MessageOutlined },
 ];
 
 // 表单数据
@@ -376,25 +294,34 @@ const scrapeForm = reactive<CreateScrapeTaskRequest>({
   account_id: undefined,
 });
 
-const messageForm = reactive<CreateMessageTaskRequest>({
+const reachForm = reactive<CreateReachTaskRequest>({
   task_name: '',
   business_line_id: null as unknown as number,
   target_contact_ids: [],
   message_mode: 'personalized',
-  prompt_template_id: undefined,
   fixed_message: '',
-  max_send_count: 50,
-  send_interval_min: 8,
-  send_interval_max: 20,
+  include_business_info: false,
+  business_info_fields: [],
 });
 
-const replyForm = reactive<CreateReplyTaskRequest>({
-  task_name: '',
-  business_line_id: null as unknown as number,
-  keywords: [],
-  prompt_template_id: undefined,
-  max_reply_count: 30,
+// 商家信息
+const businessProfile = ref<BusinessProfile>({});
+const hasBusinessProfile = computed(() => {
+  const p = businessProfile.value;
+  return !!(p.phone || p.wechat || p.shop_name || p.shop_address || p.site_url);
 });
+
+const bizFieldLabelMap: Record<string, string> = {
+  phone: '联系电话',
+  wechat: '微信号',
+  shop_name: '店铺名称',
+  shop_address: '店铺地址',
+  site_url: '独立站地址',
+};
+
+function fieldLabels(fields: string[]) {
+  return (fields || []).map(f => bizFieldLabelMap[f] || f).join('、');
+}
 
 // 计算属性
 const businessLineOptions = computed(() =>
@@ -408,23 +335,49 @@ const availableKeywords = computed(() =>
   keywordList.value.filter((k) => k.status === 1)
 );
 
-const promptOptions = computed(() =>
-  promptList.value
-    .filter((p) => p.status === 1)
-    .map((p) => ({
-      label: `${p.name} (v${p.version})`,
-      value: p.id,
-    }))
+const activePrompt = computed(() =>
+  promptList.value.find((p) => p.is_active === 1 && p.status === 1)
 );
 
-const contactOptions = computed(() =>
-  contactList.value
-    .filter((c) => c.contact_status === 'pending' || c.contact_status === 'contacted')
-    .map((c) => ({
-      label: `${c.username || c.platform_user_id}`,
-      value: c.id,
-    }))
-);
+// ─── 联系人表格（触达任务） ────────────────────────────
+const contactFilter = ref<string>('pending');
+const contactTableData = ref<Contact[]>([]);
+
+const contactStatusMap: Record<string, { label: string; type: 'default' | 'info' | 'success' | 'warning' }> = {
+  pending: { label: '待联系', type: 'warning' },
+  contacted: { label: '已联系', type: 'info' },
+  converted: { label: '已转化', type: 'success' },
+};
+
+const contactColumns = [
+  { type: 'selection' as const },
+  { title: '用户名', key: 'username', width: 140, ellipsis: { tooltip: true }, render(row: Contact) { return row.username || row.platform_user_id; } },
+  { title: '状态', key: 'contact_status', width: 90, render(row: Contact) { const s = contactStatusMap[row.contact_status] || { label: row.contact_status, type: 'default' as const }; return h(NTag, { size: 'small', type: s.type, round: true }, () => s.label); } },
+  { title: '来源关键词', key: 'source_keyword', width: 140, ellipsis: { tooltip: true }, render(row: Contact) { try { return JSON.parse(row.metadata || '{}').source_keyword || '-'; } catch { return '-'; } } },
+  { title: '添加时间', key: 'created_at', width: 110, render(row: Contact) { return row.created_at?.slice(0, 10) || '-'; } },
+];
+
+function onContactCheck(keys: number[]) {
+  reachForm.target_contact_ids = keys;
+}
+
+function selectAllContacts() {
+  reachForm.target_contact_ids = contactTableData.value.map(c => c.id);
+}
+
+async function loadReachContacts() {
+  if (!reachForm.business_line_id) return;
+  const params: any = { business_line_id: reachForm.business_line_id, pageSize: 200 };
+  if (contactFilter.value !== 'all') params.contact_status = contactFilter.value;
+  const res = await getContactList(params);
+  contactTableData.value = res.list;
+  // 默认全选 pending 状态
+  if (reachForm.target_contact_ids.length === 0) {
+    reachForm.target_contact_ids = contactTableData.value
+      .filter(c => c.contact_status === 'pending')
+      .map(c => c.id);
+  }
+}
 
 const accountOptions = computed(() =>
   accountList.value
@@ -436,40 +389,12 @@ const accountOptions = computed(() =>
 );
 
 const typeLabel = computed(() => taskTypes.find((t) => t.value === selectedType.value)?.label || '');
-const taskNamePreview = computed(() => {
-  if (selectedType.value === 'scrape') return scrapeForm.task_name;
-  if (selectedType.value === 'message') return messageForm.task_name;
-  return replyForm.task_name;
-});
 const businessLinePreview = computed(() => {
-  const blId =
-    selectedType.value === 'scrape'
-      ? scrapeForm.business_line_id
-      : selectedType.value === 'message'
-      ? messageForm.business_line_id
-      : replyForm.business_line_id;
+  const blId = selectedType.value === 'scrape'
+    ? scrapeForm.business_line_id
+    : reachForm.business_line_id;
   const bl = businessLineList.value.find((b) => b.id === blId);
   return bl ? `${bl.platform_name}/${bl.name}` : '-';
-});
-
-const canNext = computed(() => {
-  if (currentStep.value === 1) return !!selectedType.value;
-  if (currentStep.value === 2) {
-    if (selectedType.value === 'scrape') {
-      return (
-        scrapeForm.business_line_id > 0 &&
-        scrapeForm.keywords.length > 0 &&
-        scrapeForm.content_types.length > 0
-      );
-    }
-    if (selectedType.value === 'message') {
-      return messageForm.business_line_id > 0 && messageForm.target_contact_ids.length > 0;
-    }
-    if (selectedType.value === 'reply') {
-      return replyForm.business_line_id > 0 && replyForm.keywords.length > 0;
-    }
-  }
-  return true;
 });
 
 // 内容类型中文展示
@@ -478,19 +403,30 @@ const scrapeContentTypesLabel = computed(
   () => scrapeForm.content_types.map((t) => contentTypeLabelMap[t] || t).join('、') || '未选择'
 );
 
-// 下一步被禁用时的引导提示
+const canNext = computed(() => {
+  if (currentStep.value === 1) return !!selectedType.value;
+  return true;
+});
+
+const canSubmit = computed(() => {
+  if (selectedType.value === 'scrape') {
+    return scrapeForm.business_line_id > 0 && scrapeForm.keywords.length > 0 && scrapeForm.content_types.length > 0;
+  }
+  if (selectedType.value === 'reach') {
+    return reachForm.business_line_id > 0 && reachForm.target_contact_ids.length > 0;
+  }
+  return false;
+});
+
 const validationTip = computed(() => {
   if (currentStep.value !== 2) return '';
   if (selectedType.value === 'scrape') {
-    if (!scrapeForm.business_line_id) return '请先选择业务线';
-    if (scrapeForm.keywords.length === 0) return '请至少添加一个关键词';
+    if (!scrapeForm.business_line_id) return '请先选择项目';
+    if (scrapeForm.keywords.length === 0) return '该项目暂无关键词，请先在项目中心配置';
     if (scrapeForm.content_types.length === 0) return '请至少选择一种内容类型';
-  } else if (selectedType.value === 'message') {
-    if (!messageForm.business_line_id) return '请先选择业务线';
-    if (messageForm.target_contact_ids.length === 0) return '请至少选择一个目标用户';
-  } else if (selectedType.value === 'reply') {
-    if (!replyForm.business_line_id) return '请先选择业务线';
-    if (replyForm.keywords.length === 0) return '请至少添加一个关键词';
+  } else if (selectedType.value === 'reach') {
+    if (!reachForm.business_line_id) return '请先选择项目';
+    if (reachForm.target_contact_ids.length === 0) return '请至少选择一个目标用户';
   }
   return '';
 });
@@ -504,15 +440,29 @@ onMounted(async () => {
 function onBusinessLineChange(blId: number) {
   loadKeywords(blId);
   loadPrompts(blId);
+  setTimeout(() => {
+    scrapeForm.keywords = keywordList.value.filter(k => k.status === 1).map(k => k.keyword);
+    const active = promptList.value.find(p => p.is_active === 1 && p.status === 1);
+    if (active) scrapeForm.ai_prompt_template_id = active.id;
+  }, 300);
 }
 
-function onMessageBusinessLineChange(blId: number) {
-  loadContacts(blId);
-  loadPrompts(blId);
+function onReachBusinessLineChange(blId: number) {
+  reachForm.target_contact_ids = [];
+  reachForm.include_business_info = false;
+  reachForm.business_info_fields = [];
+  contactFilter.value = 'pending';
+  loadReachContacts();
+  loadBusinessProfileForReach(blId);
 }
 
-function onReplyBusinessLineChange(blId: number) {
-  loadPrompts(blId);
+async function loadBusinessProfileForReach(blId: number) {
+  try {
+    const data = await getBusinessProfile(blId);
+    businessProfile.value = data || {};
+  } catch {
+    businessProfile.value = {};
+  }
 }
 
 async function loadKeywords(blId: number) {
@@ -525,20 +475,6 @@ async function loadPrompts(blId: number) {
   promptList.value = res.list;
 }
 
-async function loadContacts(blId: number) {
-  const res = await getContactList({ business_line_id: blId });
-  contactList.value = res.list;
-}
-
-function toggleKeyword(kw: string) {
-  const idx = scrapeForm.keywords.indexOf(kw);
-  if (idx >= 0) {
-    scrapeForm.keywords.splice(idx, 1);
-  } else {
-    scrapeForm.keywords.push(kw);
-  }
-}
-
 function goBack() {
   router.push('/tasks/list');
 }
@@ -548,10 +484,8 @@ async function submitTask() {
   try {
     if (selectedType.value === 'scrape') {
       await createScrapeTask(scrapeForm);
-    } else if (selectedType.value === 'message') {
-      await createMessageTask(messageForm);
-    } else if (selectedType.value === 'reply') {
-      await createReplyTask(replyForm);
+    } else if (selectedType.value === 'reach') {
+      await createReachTask(reachForm);
     }
     message.success('任务创建成功');
     router.push('/tasks/list');
@@ -572,7 +506,7 @@ async function submitTask() {
 }
 
 .type-card {
-  width: 220px;
+  width: 260px;
   cursor: pointer;
   transition: all 0.2s;
   text-align: center;
@@ -609,12 +543,6 @@ async function submitTask() {
 
 .field-block {
   width: 100%;
-}
-
-.preset-label {
-  font-size: 12px;
-  color: #999;
-  margin-right: 4px;
 }
 
 .footer-bar {

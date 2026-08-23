@@ -124,10 +124,16 @@ const menuTreeData: TreeOption[] = [
     label: '配置中心',
     children: [
       { key: 'config_platforms', label: '应用管理' },
-      { key: 'config_business_lines', label: '项目管理' },
-      { key: 'config_keywords', label: '关键词管理' },
-      { key: 'config_prompt_templates', label: '提示词管理' },
       { key: 'config_ai_models', label: '模型配置' },
+    ],
+  },
+  {
+    key: 'project',
+    label: '项目中心',
+    children: [
+      { key: 'project_business_lines', label: '项目管理' },
+      { key: 'project_keywords', label: '关键词管理' },
+      { key: 'project_prompt_templates', label: '提示词管理' },
     ],
   },
   {

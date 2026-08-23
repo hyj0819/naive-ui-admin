@@ -8,7 +8,7 @@
             <n-select
               v-model:value="filterBusinessLineId"
               :options="businessLineOptions"
-              placeholder="全部业务线"
+              placeholder="全部项目"
               clearable
               style="width: 180px"
               @update:value="loadData"

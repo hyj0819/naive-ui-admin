@@ -18,7 +18,7 @@
           />
           <n-select
             v-model:value="filterParams.business_line_id"
-            placeholder="业务线"
+            placeholder="项目"
             :options="businessLineOptions"
             clearable
             style="width: 160px"
@@ -99,6 +99,7 @@ const filterParams = reactive<TaskListParams>({
 
 const taskTypeOptions = [
   { label: '爬虫任务', value: 'scrape' },
+  { label: '触达任务', value: 'reach' },
   { label: '私信任务', value: 'message' },
   { label: '回复任务', value: 'reply' },
 ];
@@ -135,6 +136,7 @@ const statusConfig: Record<string, { label: string; type: string }> = {
 
 const typeMap: Record<string, string> = {
   scrape: '爬虫任务',
+  reach: '触达任务',
   message: '私信任务',
   reply: '回复任务',
 };
@@ -151,7 +153,7 @@ const columns = [
     },
   },
   {
-    title: '业务线',
+    title: '项目',
     key: 'business_line',
     width: 140,
     render(row: TaskExecution) {

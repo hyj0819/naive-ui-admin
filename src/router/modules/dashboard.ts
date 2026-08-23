@@ -13,7 +13,7 @@ const routes: Array<RouteRecordRaw> = [
     redirect: '/dashboard/workplace',
     component: Layout,
     meta: {
-      title: 'Dashboard',
+      title: '工作台',
       icon: renderIcon(DashboardOutlined),
       sort: 0,
       hideMenu: true, // 隐藏菜单项

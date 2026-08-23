@@ -77,12 +77,19 @@ export interface CreateMessageTaskRequest {
   business_line_id: number;
   target_contact_ids: number[];
   message_mode: string;
-  prompt_template_id?: number;
   fixed_message?: string;
-  max_send_count: number;
-  send_interval_min: number;
-  send_interval_max: number;
   account_id?: number;
+}
+
+export interface CreateReachTaskRequest {
+  task_name?: string;
+  business_line_id: number;
+  target_contact_ids: number[];
+  message_mode: string;
+  fixed_message?: string;
+  account_id?: number;
+  include_business_info?: boolean;
+  business_info_fields?: string[];
 }
 
 export interface CreateReplyTaskRequest {
@@ -120,6 +127,11 @@ export function createScrapeTask(data: CreateScrapeTaskRequest) {
 /** 创建私信任务 */
 export function createMessageTask(data: CreateMessageTaskRequest) {
   return Alova.Post<TaskExecution>('/tasks/message', data);
+}
+
+/** 创建触达任务（合并私信+评论回复，由平台策略决定） */
+export function createReachTask(data: CreateReachTaskRequest) {
+  return Alova.Post<TaskExecution>('/tasks/reach', data);
 }
 
 /** 创建评论回复任务 */

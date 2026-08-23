@@ -10,7 +10,7 @@
       <n-space vertical :size="12">
         <div class="filter-bar">
           <n-select v-model:value="filterParams.platform_id" placeholder="平台" clearable :options="platformOptions" />
-          <n-select v-model:value="filterParams.business_line_id" placeholder="业务线" clearable :options="businessLineOptions" />
+          <n-select v-model:value="filterParams.business_line_id" placeholder="项目" clearable :options="businessLineOptions" />
           <n-select v-model:value="filterParams.content_type" placeholder="内容类型" clearable :options="contentTypeOptions" />
           <n-input v-model:value="filterParams.source_keyword" placeholder="来源关键词" clearable @keyup.enter="handleSearch" />
           <div class="filter-actions">
@@ -47,7 +47,7 @@
             <n-descriptions label-placement="left" bordered :column="1" :label-style="{ width: '90px' }">
               <n-descriptions-item label="标题">{{ currentContent.title || '-' }}</n-descriptions-item>
               <n-descriptions-item label="平台">{{ currentContent.platform_name }}</n-descriptions-item>
-              <n-descriptions-item label="业务线">{{ currentContent.business_line_name }}</n-descriptions-item>
+              <n-descriptions-item label="所属项目">{{ currentContent.business_line_name }}</n-descriptions-item>
               <n-descriptions-item label="内容类型">
                 <n-tag size="small">{{ typeLabel(currentContent.content_type) }}</n-tag>
               </n-descriptions-item>
@@ -156,7 +156,7 @@ const columns = [
   },
   { title: '作者', key: 'author_name', width: 120, minWidth: 80, ellipsis: true },
   { title: '平台', key: 'platform_name', width: 100, minWidth: 70 },
-  { title: '业务线', key: 'business_line_name', width: 110, minWidth: 80, ellipsis: true },
+  { title: '项目', key: 'business_line_name', width: 110, minWidth: 80, ellipsis: true },
   { title: '来源关键词', key: 'source_keyword', width: 130, minWidth: 80, ellipsis: true },
   { title: '采集时间', key: 'scraped_at', width: 150, minWidth: 100, ellipsis: true },
 ];

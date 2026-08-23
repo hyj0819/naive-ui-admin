@@ -75,7 +75,7 @@
           <n-descriptions-item label="任务类型">
             <n-tag size="small" :bordered="false" type="info">{{ typeLabel }}</n-tag>
           </n-descriptions-item>
-          <n-descriptions-item label="业务线">
+          <n-descriptions-item label="所属项目">
             {{ task.platform_name && task.business_line_name ? `${task.platform_name} / ${task.business_line_name}` : '-' }}
           </n-descriptions-item>
           <n-descriptions-item label="状态">

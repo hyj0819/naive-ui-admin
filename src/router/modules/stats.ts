@@ -13,7 +13,7 @@ const routes: Array<RouteRecordRaw> = [
     meta: {
       title: '统计分析',
       icon: renderIcon(BarChartOutlined),
-      sort: 4,
+      sort: 5,
     },
     children: [
       {

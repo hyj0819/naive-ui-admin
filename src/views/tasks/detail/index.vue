@@ -68,7 +68,7 @@
               <n-descriptions-item label="任务类型">
                 <n-tag size="small" :bordered="false" type="info">{{ typeLabel }}</n-tag>
               </n-descriptions-item>
-              <n-descriptions-item label="业务线">
+              <n-descriptions-item label="所属项目">
                 {{ task.platform_name && task.business_line_name ? `${task.platform_name} / ${task.business_line_name}` : '-' }}
               </n-descriptions-item>
               <n-descriptions-item label="状态">
@@ -113,6 +113,30 @@
                 </n-descriptions-item>
                 <n-descriptions-item label="发送上限">{{ taskConfig.max_send_count }}</n-descriptions-item>
                 <n-descriptions-item label="发送间隔">{{ taskConfig.send_interval_min }} - {{ taskConfig.send_interval_max }} 分钟</n-descriptions-item>
+              </template>
+              <template v-if="task.task_type === 'reach'">
+                <n-descriptions-item label="触达方式">
+                  <n-tag size="small" type="info" :bordered="false">
+                    {{ taskConfig.reach_strategy === 'comment_reply' ? '评论回复' : '私信' }}
+                  </n-tag>
+                </n-descriptions-item>
+                <n-descriptions-item label="目标用户数">{{ (taskConfig.target_contact_ids || []).length }} 人</n-descriptions-item>
+                <n-descriptions-item label="消息模式">
+                  {{ taskConfig.message_mode === 'personalized' ? '个性化生成（AI 自动）' : '固定话术' }}
+                </n-descriptions-item>
+                <n-descriptions-item v-if="taskConfig.fixed_message" label="固定话术">
+                  {{ taskConfig.fixed_message }}
+                </n-descriptions-item>
+                <n-descriptions-item label="附带商家信息">
+                  <template v-if="taskConfig.include_business_info && taskConfig.business_profile">
+                    <n-space :size="4" :wrap="true">
+                      <n-tag v-for="(val, key) in taskConfig.business_profile" :key="key" size="small" type="success" :bordered="false">
+                        {{ bizFieldLabel(key) }}: {{ val }}
+                      </n-tag>
+                    </n-space>
+                  </template>
+                  <span v-else>不附带</span>
+                </n-descriptions-item>
               </template>
               <template v-if="task.task_type === 'reply'">
                 <n-descriptions-item label="关键词">
@@ -221,18 +245,20 @@
                 <n-button size="small" :loading="logLoading" @click="manualRefresh">刷新</n-button>
               </n-space>
             </template>
-            <n-scrollbar ref="logScrollRef" class="log-scroll">
-              <div v-if="logs.length === 0" class="text-center text-gray-400 py-8">暂无日志</div>
-              <div v-else class="log-list">
-                <div v-for="log in logs" :key="log.id" class="log-item" :class="log.log_level">
-                  <span class="log-time">{{ log.created_at }}</span>
-                  <n-tag :type="logTagType(log.log_level)" size="tiny" :bordered="false" class="mx-2 log-level-tag">
-                    {{ (log.log_level || 'info').toUpperCase() }}
-                  </n-tag>
-                  <span class="log-msg">{{ log.message }}</span>
+            <div class="log-scroll-wrapper">
+              <n-scrollbar ref="logScrollRef" class="log-scroll">
+                <div v-if="logs.length === 0" class="text-center text-gray-400 py-8">暂无日志</div>
+                <div v-else class="log-list">
+                  <div v-for="log in logs" :key="log.id" class="log-item" :class="log.log_level">
+                    <span class="log-time">{{ log.created_at }}</span>
+                    <n-tag :type="logTagType(log.log_level)" size="tiny" :bordered="false" class="mx-2 log-level-tag">
+                      {{ (log.log_level || 'info').toUpperCase() }}
+                    </n-tag>
+                    <span class="log-msg">{{ log.message }}</span>
+                  </div>
                 </div>
-              </div>
-            </n-scrollbar>
+              </n-scrollbar>
+            </div>
           </n-card>
         </div>
       </div>
@@ -287,6 +313,7 @@ const logLevelOptions = [
 
 const typeMap: Record<string, string> = {
   scrape: '爬虫任务',
+  reach: '触达任务',
   message: '私信任务',
   reply: '回复任务',
 };
@@ -303,11 +330,23 @@ const statusConfig: Record<string, { label: string; type: string }> = {
 // 各任务类型的统计口径标签
 const statLabelMap: Record<string, { total: string; success: string; failed: string; pending: string }> = {
   scrape: { total: '目标量', success: '已采集', failed: '失败', pending: '待处理' },
+  reach: { total: '目标用户', success: '已触达', failed: '失败', pending: '待触达' },
   message: { total: '目标量', success: '已发送', failed: '失败', pending: '待发送' },
   reply: { total: '目标量', success: '已回复', failed: '失败', pending: '待回复' },
 };
 
 const contentTypeMap: Record<string, string> = { video: '视频', comment: '评论', post: '帖子' };
+
+const bizFieldLabelMap: Record<string, string> = {
+  phone: '电话',
+  wechat: '微信',
+  shop_name: '店铺',
+  shop_address: '地址',
+  site_url: '官网',
+};
+function bizFieldLabel(key: string) {
+  return bizFieldLabelMap[key] || key;
+}
 
 const typeLabel = computed(() => (task.value ? typeMap[task.value.task_type] || task.value.task_type : ''));
 const statusLabel = computed(() => (task.value ? statusConfig[task.value.status]?.label || task.value.status : ''));
@@ -691,29 +730,44 @@ onUnmounted(() => {
 .task-detail-right {
   display: flex;
   flex-direction: column;
-  height: fit-content;
   position: sticky;
   top: 16px;
+  align-self: flex-start;
+  height: calc(100vh - 192px);
 }
 
 .log-card {
-  height: calc(100vh - 180px);
-  display: flex;
-  flex-direction: column;
-}
-
-.log-card :deep(.n-card-body) {
   flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+.log-card :deep(.n-card-content) {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0 !important;
+}
+
+.log-scroll-wrapper {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background: #1a1a2e;
+  border-radius: 8px;
+  margin: 0 16px 16px;
 }
 
 .log-scroll {
-  flex: 1;
   height: 100%;
-  min-height: 0;
-  overflow: hidden;
+}
+
+.log-scroll :deep(.n-scrollbar-container) {
+  padding: 12px 16px;
 }
 
 .task-title {
@@ -733,6 +787,7 @@ onUnmounted(() => {
 
   .log-card {
     height: 500px;
+    max-height: 500px;
   }
 }
 
@@ -744,6 +799,7 @@ onUnmounted(() => {
 
   .log-card {
     height: 400px;
+    max-height: 400px;
   }
 }
 
@@ -857,11 +913,7 @@ onUnmounted(() => {
   }
 }
 
-.log-scroll {
-  background: #1a1a2e;
-  border-radius: 8px;
-  padding: 12px 16px;
-}
+
 
 .log-list {
   font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
@@ -984,5 +1036,17 @@ onUnmounted(() => {
 .slide-up-enter-from,
 .slide-up-leave-to {
   transform: translateY(100%);
+}
+</style>
+
+<style lang="less">
+/* 非 scoped：强制覆盖 Naive UI n-card 内部样式 */
+.log-card.n-card > .n-card-content {
+  flex: 1 !important;
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  padding: 0 !important;
 }
 </style>

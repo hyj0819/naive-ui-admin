@@ -31,8 +31,42 @@
           <n-form-item label="应用名称">
             <n-input v-model:value="formData.name" placeholder="请输入应用名称" />
           </n-form-item>
-          <n-form-item label="状态">
-            <n-switch v-model:value="formData.status" :checked-value="1" :unchecked-value="0" />
+          <n-form-item label="应用描述">
+            <n-input v-model:value="formData.description" type="textarea" placeholder="请输入应用描述" />
+          </n-form-item>
+          <n-form-item label="应用图标">
+            <div class="icon-upload-area">
+              <n-upload
+                :show-file-list="false"
+                :custom-request="handleIconUpload"
+                accept=".png,.jpg,.jpeg,.svg,.webp"
+              >
+                <div class="icon-preview" v-if="iconPreviewUrl || formData.icon">
+                  <n-image
+                    :src="iconPreviewUrl || formData.icon"
+                    width="64"
+                    height="64"
+                    object-fit="cover"
+                    style="border-radius: 8px"
+                  />
+                  <div class="icon-mask">
+                    <span>更换图标</span>
+                  </div>
+                </div>
+                <div class="icon-upload-btn" v-else>
+                  <n-icon size="24"><PlusOutlined /></n-icon>
+                  <span>上传图标</span>
+                </div>
+              </n-upload>
+            </div>
+          </n-form-item>
+          <n-form-item label="触达方式">
+            <n-select
+              v-model:value="formData.reach_strategy"
+              :options="reachStrategyOptions"
+              placeholder="选择默认触达方式"
+            />
+            <div class="form-help mt-1">系统创建触达任务时自动使用此方式</div>
           </n-form-item>
         </n-form>
       <template #action>
@@ -47,10 +81,10 @@
 
 <script lang="ts" setup>
 import { reactive, ref, h, nextTick } from 'vue';
-import { useMessage, useDialog } from 'naive-ui';
+import { useMessage, useDialog, type UploadCustomRequestOptions } from 'naive-ui';
 import { BasicTable, TableAction } from '@/components/Table';
 import { PlusOutlined } from '@vicons/antd';
-import { getPlatformList, createPlatform, updatePlatform, deletePlatform, type Platform, type CreatePlatformRequest, type UpdatePlatformRequest } from '@/api/config/platforms';
+import { getPlatformList, createPlatform, updatePlatform, deletePlatform, uploadPlatformIcon, type Platform, type CreatePlatformRequest, type UpdatePlatformRequest } from '@/api/config/platforms';
 
 const message = useMessage();
 const dialog = useDialog();
@@ -62,6 +96,23 @@ const editId = ref<number | null>(null);
 
 const columns = [
   {
+    title: '应用图标',
+    key: 'icon',
+    width: 80,
+    render(row: Platform) {
+      const src = row.icon || '/uploads/platforms/default.png';
+      return h('img', {
+        src,
+        style: {
+          width: '36px',
+          height: '36px',
+          borderRadius: '6px',
+          objectFit: 'cover',
+        },
+      });
+    },
+  },
+  {
     title: '应用编码',
     key: 'code',
     width: 120,
@@ -70,6 +121,20 @@ const columns = [
     title: '应用名称',
     key: 'name',
     width: 150,
+  },
+  {
+    title: '应用描述',
+    key: 'description',
+    width: 200,
+  },
+  {
+    title: '触达方式',
+    key: 'reach_strategy',
+    width: 110,
+    render(row: Platform) {
+      const map: Record<string, string> = { dm: '私信', comment_reply: '评论回复' };
+      return map[row.reach_strategy] || row.reach_strategy || '私信';
+    },
   },
   {
     title: '状态',
@@ -110,8 +175,19 @@ const actionColumn = reactive({
 
 const formData = reactive<CreatePlatformRequest & UpdatePlatformRequest>({
   name: '',
+  description: '',
+  icon: '',
+  reach_strategy: 'dm',
   status: 1,
 });
+
+const reachStrategyOptions = [
+  { label: '私信', value: 'dm' },
+  { label: '评论回复', value: 'comment_reply' },
+];
+
+const iconPreviewUrl = ref('');
+const iconUploading = ref(false);
 
 const loadDataTable = async (res: any) => {
   return await getPlatformList(res);
@@ -120,15 +196,33 @@ const loadDataTable = async (res: any) => {
 function addPlatform() {
   editId.value = null;
   modalTitle.value = '新增应用';
-  Object.assign(formData, { name: '', status: 1 });
+  Object.assign(formData, { name: '', description: '', icon: '', reach_strategy: 'dm', status: 1 });
+  iconPreviewUrl.value = '';
   showModal.value = true;
 }
 
 function handleEdit(record: Platform) {
   editId.value = record.id;
   modalTitle.value = '编辑应用';
-  Object.assign(formData, { name: record.name, status: record.status });
+  Object.assign(formData, { name: record.name, description: record.description || '', icon: record.icon || '', reach_strategy: record.reach_strategy || 'dm', status: record.status });
+  iconPreviewUrl.value = '';
   showModal.value = true;
+}
+
+async function handleIconUpload(options: UploadCustomRequestOptions) {
+  const { file } = options;
+  if (!file.file) return;
+  iconUploading.value = true;
+  try {
+    const res = await uploadPlatformIcon(file.file);
+    formData.icon = res.url;
+    iconPreviewUrl.value = URL.createObjectURL(file.file);
+    options.onFinish();
+  } catch (e) {
+    options.onError();
+  } finally {
+    iconUploading.value = false;
+  }
 }
 
 async function submitForm() {
@@ -171,4 +265,59 @@ function handleDelete(record: Platform) {
 }
 </script>
 
-<style lang="less" scoped></style>
+<style lang="less" scoped>
+.icon-upload-area {
+  .icon-preview {
+    position: relative;
+    width: 64px;
+    height: 64px;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+
+    .icon-mask {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.2s;
+      color: #fff;
+      font-size: 12px;
+    }
+
+    &:hover .icon-mask {
+      opacity: 1;
+    }
+  }
+
+  .icon-upload-btn {
+    width: 64px;
+    height: 64px;
+    border: 1px dashed #d9d9d9;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #999;
+    gap: 2px;
+    transition: border-color 0.2s;
+
+    span {
+      font-size: 11px;
+    }
+
+    &:hover {
+      border-color: var(--primary-color, #18a058);
+      color: var(--primary-color, #18a058);
+    }
+  }
+}
+</style>
