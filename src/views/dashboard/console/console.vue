@@ -1,5 +1,10 @@
 <template>
   <div class="console-dashboard">
+    <!-- 欢迎问候 -->
+    <div style="margin-bottom: 12px; padding: 8px 0;">
+      <h3 style="margin: 0; color: #666; font-size: 14px;">{{ timeGreeting }}</h3>
+    </div>
+
     <!-- ① 核心指标卡片 -->
     <n-grid cols="1 s:2 m:2 l:4 xl:4 2xl:4" responsive="screen" :x-gap="12" :y-gap="8">
       <n-grid-item v-for="card in kpiCards" :key="card.label">
@@ -42,30 +47,37 @@
     <!-- ③ 转化漏斗 + 平台分布 -->
     <n-grid class="mt-3" cols="1 s:1 m:1 l:2 xl:2 2xl:2" responsive="screen" :x-gap="12" :y-gap="8">
       <n-gi>
-        <n-card :bordered="false" size="small" title="转化漏斗">
-          <div ref="funnelChartRef" style="height: 280px"></div>
-          <div v-if="pipelineStages.length" class="funnel-rates">
-            <div v-for="(stage, i) in pipelineStages" :key="stage.name" class="funnel-rate-row">
-              <span class="funnel-name">{{ stage.name }}</span>
-              <span class="funnel-val">{{ stage.value.toLocaleString() }}</span>
-              <n-progress
-                type="line"
-                :percentage="stage.rate"
-                :show-indicator="false"
-                :height="6"
-                :color="funnelColors[i % funnelColors.length]"
-                style="flex: 1; margin: 0 12px"
-              />
-              <span class="funnel-pct">{{ stage.rate }}%</span>
+        <n-card :bordered="false" size="small" title="转化流程概览">
+          <!-- 上下布局：上为漏斗图，下为阶段指标列表 -->
+          <div ref="funnelChartRef" style="height: 200px; margin-bottom: 16px;"></div>
+          
+          <!-- 阶段指标详情 -->
+          <div class="pipeline-stages-list">
+            <div v-for="(stage, i) in pipelineStages" :key="stage.name" class="stage-item">
+              <div class="stage-header">
+                <span class="stage-name">{{ stage.name }}</span>
+                <span class="stage-value">{{ stage.value.toLocaleString() }}</span>
+              </div>
+              <div class="stage-progress">
+                <n-progress 
+                  type="line" 
+                  :percentage="stage.rate" 
+                  :show-indicator="false"
+                  :height="8"
+                  :color="funnelColors[i % funnelColors.length]"
+                  stroke-color="var(--primary-color)"
+                />
+                <span class="stage-rate">{{ stage.rate }}%</span>
+              </div>
             </div>
           </div>
         </n-card>
       </n-gi>
       <n-gi>
-        <n-card :bordered="false" size="small" title="平台内容分布">
-          <div class="flex items-center" style="height: 280px">
-            <div ref="pieChartRef" style="width: 50%; height: 100%"></div>
-            <div class="platform-list" style="width: 50%">
+        <n-card :bordered="false" size="small" title="平台内容分布" :content-style="{ height: '350px', padding: '12px' }">
+          <div class="flex items-center" style="height: 320px">
+            <div ref="pieChartRef" style="width: 45%; height: 100%"></div>
+            <div class="platform-list compact">
               <div v-for="p in platformData" :key="p.platform_code" class="platform-row">
                 <span class="platform-dot" :style="{ background: getPlatformColor(p.platform_code) }"></span>
                 <span class="platform-name">{{ p.platform_name }}</span>
@@ -128,6 +140,18 @@ import {
 const router = useRouter();
 const message = useMessage();
 
+// ─── 动态时间问候语 ────────────────────────────────────────
+const timeGreeting = computed(() => {
+  const hour = new Date().getHours();
+  if (hour < 6) return '夜深了管理员，注意休息';
+  if (hour < 9) return '早上好管理员';
+  if (hour < 12) return '上午好管理员';
+  if (hour < 14) return '中午好管理员';
+  if (hour < 18) return '下午好管理员';
+  if (hour < 22) return '晚上好管理员';
+  return '夜深了管理员，注意休息';
+});
+
 // ─── 概览数据 ────────────────────────────────────────────
 const overview = ref<OverviewStats>({
   total_contents: 0, total_contacts: 0, contacted: 0, converted: 0,
@@ -137,15 +161,15 @@ const overview = ref<OverviewStats>({
 // ─── KPI 卡片 ────────────────────────────────────────────
 const kpiCards = computed(() => [
   {
-    label: '采集内容',
+    label: '采集总内容',
     value: overview.value.total_contents,
     icon: markRaw(FileTextOutlined),
     color: '#3b82f6',
     bgColor: 'rgba(59,130,246,0.1)',
-    sub: `AI筛选通过 ${overview.value.ai_passed} 条`,
+    sub: `AI 智能筛选通过 ${overview.value.ai_passed} 条`,
   },
   {
-    label: '触达用户',
+    label: '触达总用户',
     value: overview.value.total_contacts,
     icon: markRaw(TeamOutlined),
     color: '#22c55e',
@@ -153,7 +177,7 @@ const kpiCards = computed(() => [
     sub: `已联系 ${overview.value.contacted} · 已转化 ${overview.value.converted}`,
   },
   {
-    label: '转化率',
+    label: '客户转化率',
     value: overview.value.conversion_rate,
     suffix: '%',
     icon: markRaw(ThunderboltOutlined),
@@ -162,7 +186,7 @@ const kpiCards = computed(() => [
     sub: `触达率 ${overview.value.contact_rate}%`,
   },
   {
-    label: '运行中任务',
+    label: '执行中任务',
     value: overview.value.running_tasks,
     icon: markRaw(PlayCircleOutlined),
     color: '#8b5cf6',
@@ -181,17 +205,81 @@ function renderTrendChart() {
   if (!trendChartRef.value) return;
   if (!trendChart) trendChart = echarts.init(trendChartRef.value);
   const dates = trendData.value.map(d => d.date);
+  
+  // 计算 x 轴标签的显示频率
+  const labelSkip = Math.max(1, Math.floor(dates.length / 15));
+  
   trendChart.setOption({
     tooltip: { trigger: 'axis' },
-    legend: { data: ['新增采集', '新增用户', '发送私信'], bottom: 0, itemGap: 24 },
-    grid: { left: 50, right: 20, top: 16, bottom: 40 },
-    xAxis: { type: 'category', data: dates, axisLabel: { rotate: dates.length > 15 ? 45 : 0, fontSize: 11 } },
-    yAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed' } } },
+    legend: { 
+      data: ['新增采集', '新增用户', '发送私信'], 
+      bottom: 0, 
+      itemGap: 24,
+      icon: 'roundRect'
+    },
+    grid: { left: 50, right: 30, top: 16, bottom: 50 },
+    xAxis: { 
+      type: 'category', 
+      data: dates, 
+      axisLabel: { 
+        rotate: dates.length > 15 ? 45 : 0, 
+        fontSize: 11,
+        formatter: (value: string, index: number) => {
+          // 只显示月和日（如"1 月 5 日"）
+          const date = new Date(value);
+          if (isNaN(date.getTime())) return value;
+          const month = date.getMonth() + 1;
+          const day = date.getDate();
+          return `${month}月${day}日`;
+        }
+      } 
+    },
+    yAxis: { 
+      type: 'value', 
+      splitLine: { lineStyle: { type: 'dashed' } } 
+    },
     series: [
-      { name: '新增采集', type: 'line', smooth: true, data: trendData.value.map(d => d.contents), itemStyle: { color: '#3b82f6' }, areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(59,130,246,0.25)' }, { offset: 1, color: 'rgba(59,130,246,0.02)' }]) } },
-      { name: '新增用户', type: 'line', smooth: true, data: trendData.value.map(d => d.contacts), itemStyle: { color: '#22c55e' }, areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(34,197,94,0.2)' }, { offset: 1, color: 'rgba(34,197,94,0.02)' }]) } },
-      { name: '发送私信', type: 'line', smooth: true, data: trendData.value.map(d => d.messages), itemStyle: { color: '#f97316' } },
+      { 
+        name: '新增采集', 
+        type: 'line', 
+        smooth: true, 
+        data: trendData.value.map((d, i) => i % labelSkip === 0 ? d.contents : null),
+        itemStyle: { color: '#3b82f6' }, 
+        areaStyle: { 
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: 'rgba(59,130,246,0.25)' }, 
+            { offset: 1, color: 'rgba(59,130,246,0.02)' }
+          ])
+        } 
+      },
+      { 
+        name: '新增用户', 
+        type: 'line', 
+        smooth: true, 
+        data: trendData.value.map((d, i) => i % labelSkip === 0 ? d.contacts : null),
+        itemStyle: { color: '#22c55e' }, 
+        areaStyle: { 
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: 'rgba(34,197,94,0.2)' }, 
+            { offset: 1, color: 'rgba(34,197,94,0.02)' }
+          ])
+        } 
+      },
+      { 
+        name: '发送私信', 
+        type: 'line', 
+        smooth: true, 
+        data: trendData.value.map(d => d.messages), 
+        itemStyle: { color: '#f97316' } 
+      }
     ],
+    // 图例组件 - 底部显示
+    legendComponent: {
+      bottom: 0,
+      data: ['新增采集', '新增用户', '发送私信'],
+      textStyle: { fontSize: 12 },
+      itemType: 'rectangle'
+    }
   });
 }
 
@@ -211,15 +299,42 @@ function renderFunnel() {
   if (!funnelChartRef.value || !pipelineStages.value.length) return;
   if (!funnelChart) funnelChart = echarts.init(funnelChartRef.value);
   funnelChart.setOption({
-    tooltip: { trigger: 'item', formatter: (p: any) => { const s = pipelineStages.value[p.dataIndex]; return `${s.name}<br/>数量: ${s.value.toLocaleString()}<br/>转化率: ${s.rate}%`; } },
+    tooltip: { 
+      trigger: 'item', 
+      formatter: (p: any) => { 
+        const s = pipelineStages.value[p.dataIndex];
+        return `${s.name}<br/>数量：${s.value.toLocaleString()}<br/>转化率：${s.rate}%`;
+      } 
+    },
     series: [{
-      name: '转化漏斗', type: 'funnel', left: '10%', top: 16, bottom: 16, width: '80%',
-      min: 0, max: Math.max(...pipelineStages.value.map(s => s.value), 1),
-      sort: 'descending', gap: 4,
-      label: { show: true, position: 'inside', formatter: (p: any) => `${pipelineStages.value[p.dataIndex].name}\n${pipelineStages.value[p.dataIndex].value.toLocaleString()}`, fontSize: 12, color: '#fff' },
-      itemStyle: { borderColor: '#fff', borderWidth: 2 },
-      data: pipelineStages.value.map((s, i) => ({ value: s.value, name: s.name, itemStyle: { color: funnelColors[i % funnelColors.length] } })),
-    }],
+      name: '转化漏斗', 
+      type: 'funnel', 
+      left: '10%', 
+      top: 16, 
+      bottom: 16, 
+      width: '80%',
+      min: 0, 
+      max: Math.max(...pipelineStages.value.map(s => s.value), 1),
+      sort: 'descending', 
+      gap: 4,
+      label: { 
+        show: true, 
+        position: 'inside', 
+        formatter: (p: any) => `${pipelineStages.value[p.dataIndex].name}\n${pipelineStages.value[p.dataIndex].value.toLocaleString()}`, 
+        fontSize: 12, 
+        color: '#fff',
+        fontWeight: 'bold'
+      },
+      itemStyle: { 
+        borderColor: '#fff', 
+        borderWidth: 2 
+      },
+      data: pipelineStages.value.map((s, i) => ({ 
+        value: s.value, 
+        name: s.name, 
+        itemStyle: { color: funnelColors[i % funnelColors.length] } 
+      }))
+    }]
   });
 }
 
@@ -359,6 +474,50 @@ onBeforeUnmount(() => {
 }
 
 /* 漏斗转化率 */
+.pipeline-stages-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stage-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stage-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+}
+
+.stage-name {
+  font-size: 13px;
+  color: #666;
+  font-weight: 500;
+}
+
+.stage-value {
+  font-size: 16px;
+  color: #333;
+  font-weight: 700;
+}
+
+.stage-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stage-rate {
+  font-size: 12px;
+  color: #999;
+  min-width: 40px;
+  text-align: right;
+}
+
 .funnel-rates {
   margin-top: 8px;
   display: flex;
@@ -397,6 +556,12 @@ onBeforeUnmount(() => {
   gap: 12px;
   padding: 12px 16px;
 }
+
+.platform-list.compact {
+  gap: 10px;
+  padding: 10px 14px;
+}
+
 .platform-row {
   display: flex;
   align-items: center;
@@ -417,5 +582,26 @@ onBeforeUnmount(() => {
   font-size: 14px;
   font-weight: 600;
   color: #333;
+}
+
+/* 统一卡片高度 */
+.console-dashboard > .n-card:first-child {
+  min-height: 120px; /* KPI 卡片 */
+}
+
+.dashboard-trend-card {
+  min-height: 320px; /* 趋势图 */
+}
+
+.dashboard-funnel-section {
+  min-height: 350px; /* 漏斗 section */
+}
+
+.dashboard-platform-section {
+  min-height: 350px; /* 平台分布 */
+}
+
+.dashboard-task-section {
+  min-height: 250px; /* 最近任务 */
 }
 </style>

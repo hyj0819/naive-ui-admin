@@ -127,14 +127,17 @@ const actionColumn = reactive({
           label: '激活',
           onClick: handleActivate.bind(null, record),
           ifShow: () => !record.is_active,
+          type: 'success', // Success 色
         },
         {
           label: '编辑',
           onClick: handleEdit.bind(null, record),
+          type: 'info', // Info 色
         },
         {
           label: '删除',
           onClick: handleDelete.bind(null, record),
+          type: 'error', // Error 色
         },
       ],
     });

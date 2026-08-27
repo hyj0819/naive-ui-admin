@@ -281,13 +281,14 @@
           icon: 'SearchOutlined',
           tips: '搜索',
         },
-        {
-          icon: 'GithubOutlined',
-          tips: 'github',
-          eventObject: {
-            click: () => window.open('https://github.com/jekip/naive-ui-admin'),
-          },
-        },
+        // GitHub 链接已移除
+        // {
+        //   icon: 'GithubOutlined',
+        //   tips: 'github',
+        //   eventObject: {
+        //     click: () => window.open('https://github.com/jekip/naive-ui-admin'),
+        //   },
+        // },
         {
           icon: 'LockOutlined',
           tips: '锁屏',

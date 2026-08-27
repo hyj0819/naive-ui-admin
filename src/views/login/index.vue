@@ -176,11 +176,11 @@
         try {
           const { code, message: msg } = await userStore.login(params);
           if (code == ResultEnum.SUCCESS) {
-            const toPath = decodeURIComponent((route.query?.redirect || '/') as string);
+            // 登出时已经清空了路由和标签页状态
+            // 这里只需跳转到首页，由路由守卫动态添加路由
             message.success('登录成功，即将进入系统');
-            if (route.name === LOGIN_NAME) {
-              router.replace('/');
-            } else router.replace(toPath);
+            // 跳转到首页
+            router.replace('/');
           } else {
             message.info(msg || '登录失败');
           }

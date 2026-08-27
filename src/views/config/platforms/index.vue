@@ -66,7 +66,12 @@
               :options="reachStrategyOptions"
               placeholder="选择默认触达方式"
             />
-            <div class="form-help mt-1">系统创建触达任务时自动使用此方式</div>
+            <n-alert type="info" :bordered="false" class="mt-1" style="font-size: 12px; padding: 8px;">
+              <template #icon>
+                <n-icon><InfoCircleOutlined /></n-icon>
+              </template>
+              系统创建触达任务时会自动使用此默认方式
+            </n-alert>
           </n-form-item>
         </n-form>
       <template #action>
@@ -83,7 +88,7 @@
 import { reactive, ref, h, nextTick } from 'vue';
 import { useMessage, useDialog, type UploadCustomRequestOptions } from 'naive-ui';
 import { BasicTable, TableAction } from '@/components/Table';
-import { PlusOutlined } from '@vicons/antd';
+import { PlusOutlined, InfoCircleOutlined } from '@vicons/antd';
 import { getPlatformList, createPlatform, updatePlatform, deletePlatform, uploadPlatformIcon, type Platform, type CreatePlatformRequest, type UpdatePlatformRequest } from '@/api/config/platforms';
 
 const message = useMessage();
@@ -163,10 +168,12 @@ const actionColumn = reactive({
         {
           label: '编辑',
           onClick: handleEdit.bind(null, record),
+          type: 'primary', // Primary 色
         },
         {
           label: '删除',
           onClick: handleDelete.bind(null, record),
+          type: 'error', // Error 色
         },
       ],
     });

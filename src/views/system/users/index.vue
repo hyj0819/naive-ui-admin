@@ -195,18 +195,22 @@ const actionColumn = {
         {
           label: '编辑',
           onClick: () => openEditModal(row),
+          type: 'info', // Info 色
         },
         {
           label: '角色',
           onClick: () => openRoleModal(row),
+          type: 'primary', // Primary 色
         },
         {
           label: '重置密码',
           onClick: () => openResetPwModal(row),
+          type: 'warning', // Warning 色
         },
         {
           label: row.status === 1 ? '禁用' : '启用',
           onClick: () => handleToggleStatus(row),
+          type: row.status === 1 ? 'warning' : 'success', // 禁用用 Warning，启用用 Success
         },
       ],
       dropDownActions: [

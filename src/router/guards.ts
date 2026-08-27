@@ -1,5 +1,6 @@
 import { PageEnum } from '@/enums/pageEnum';
 import { ErrorPageRoute } from '@/router/base';
+import { constantRouter, asyncRoutes } from '@/router/index';
 import { useAsyncRoute } from '@/store/modules/asyncRoute';
 import { useUser } from '@/store/modules/user';
 import { ACCESS_TOKEN } from '@/store/mutation-types';
@@ -52,15 +53,33 @@ export function createRouterGuards(router: Router) {
       return;
     }
 
+    // 如果动态路由已经添加过，直接通过（避免重复添加）
+    // 注意：退出登录后 token 会被清除，下次访问会跳转到登录页
     if (asyncRouteStore.getIsDynamicRouteAdded) {
       next();
       return;
     }
 
+    // 如果是从登录页过来，或者 token 还在但路由未添加，说明是首次访问或登录成功
+    const isFromLoginPage = from.path === LOGIN_PATH || from.name === 'Login';
+
     try {
       const userInfo = await userStore.getInfo();
 
       const routes = await asyncRouteStore.generateRoutes(userInfo);
+
+      // 如果之前已经添加过动态路由，需要先移除（用于登录后重新添加）
+      if (asyncRouteStore.getIsDynamicRouteAdded) {
+        // 获取已添加的所有路由
+        const allRoutes = router.getRoutes();
+        // 移除动态添加的路由，只保留常量路由
+        allRoutes.forEach((route) => {
+          const isDynamic = !constantRouter.some(c => c.name === route.name);
+          if (isDynamic && route.name) {
+            router.removeRoute(route.name);
+          }
+        });
+      }
 
       // 动态添加可访问路由表
       routes.forEach((item) => {

@@ -91,6 +91,7 @@ const modalTitle = ref('新增模型');
 const editId = ref<number | null>(null);
 const apiKeyInputType = ref<'password' | 'text'>('password');
 const editApiKeyMasked = ref('');
+const recordTestingIds = ref<number[]>([]); // 正在测试中的模型 ID 列表
 
 const apiKeyPlaceholder = computed(() => {
   if (editId.value && editApiKeyMasked.value) {
@@ -172,23 +173,29 @@ const actionColumn = reactive({
           label: '激活',
           onClick: handleActivate.bind(null, record),
           ifShow: () => !record.is_active,
+          type: 'success', // Success 色
         },
         {
           label: '取消激活',
           onClick: handleDeactivate.bind(null, record),
           ifShow: () => !!record.is_active,
+          type: 'warning', // Warning 色
         },
         {
           label: '测试连接',
           onClick: handleTest.bind(null, record),
+          loading: recordTestingIds.value.includes(record.id),
+          type: 'info', // Info 色
         },
         {
           label: '编辑',
           onClick: handleEdit.bind(null, record),
+          type: 'primary', // Primary 色
         },
         {
           label: '删除',
           onClick: handleDelete.bind(null, record),
+          type: 'error', // Error 色
         },
       ],
     });
@@ -315,15 +322,28 @@ async function handleDeactivate(record: AIModel) {
 }
 
 async function handleTest(record: AIModel) {
+  // 添加 Loading 状态
+  recordTestingIds.value.push(record.id);
+  
+  const loadingMsg = message.loading('正在测试连接，请稍候...', { duration: 0 });
+  
   try {
     const response: any = await testAiModel(record.id);
+    
     if (response.success === true) {
-      message.success('测试成功');
+      loadingMsg.destroy();
+      message.success('✅ 测试成功！API 连接正常');
     } else {
-      message.error(response.response || '测试失败');
+      loadingMsg.destroy();
+      message.error(`❌ 测试失败：${response.response || '未知错误'}`);
     }
   } catch (error: any) {
-    message.error(error.message || '测试失败');
+    loadingMsg.destroy();
+    const errorMsg = error.message || '测试失败';
+    message.error(`❌ ${errorMsg}`);
+  } finally {
+    // 移除 Loading 状态
+    recordTestingIds.value = recordTestingIds.value.filter(id => id !== record.id);
   }
 }
 </script>

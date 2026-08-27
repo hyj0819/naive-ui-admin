@@ -5,6 +5,8 @@ import { ResultEnum } from '@/enums/httpEnum';
 
 import { getUserInfo as getUserInfoApi, login } from '@/api/system/user';
 import { storage } from '@/utils/Storage';
+import { useAsyncRoute } from './asyncRoute';
+import { useTabsViewStore } from './tabsView';
 
 export type UserInfoType = {
   id?: number;
@@ -84,6 +86,15 @@ export const useUserStore = defineStore({
         storage.set(IS_SCREENLOCKED, false);
         this.setToken(accessToken);
         this.setUserInfo(result.user);
+        
+        // 登出时清理了旧的 router store 状态，这里需要恢复
+        const asyncRouteStore = useAsyncRoute();
+        const tabsViewStore = useTabsViewStore();
+        
+        // 登录成功时，清除上次遗留的动态路由标记和 keepAlive 缓存
+        asyncRouteStore.setDynamicRouteAdded(false);
+        asyncRouteStore.setKeepAliveComponents([]);
+        
         // 存储权限和菜单
         if (result.user?.menus) {
           this.setMenus(result.user.menus);
@@ -119,6 +130,17 @@ export const useUserStore = defineStore({
       this.setUserInfo({ username: '', email: '' });
       storage.remove(ACCESS_TOKEN);
       storage.remove(CURRENT_USER);
+      
+      // 清除动态添加的路由相关状态
+      const asyncRouteStore = useAsyncRoute();
+      const tabsViewStore = useTabsViewStore();
+      
+      asyncRouteStore.setDynamicRouteAdded(false);
+      asyncRouteStore.setRouters([]);
+      asyncRouteStore.setMenus([]);
+      asyncRouteStore.setKeepAliveComponents([]);
+      
+      tabsViewStore.closeAllTabs();
     },
   },
 });

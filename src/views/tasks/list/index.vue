@@ -6,49 +6,58 @@
       </n-card>
     </div>
     <n-card :bordered="false" class="mt-4 proCard">
-      <!-- 筛选栏 -->
+      <!-- 左侧操作区 + 右侧筛选条件 -->
       <div class="filter-bar mb-4">
-        <n-space>
-          <n-select
-            v-model:value="filterParams.task_type"
-            placeholder="任务类型"
-            :options="taskTypeOptions"
-            clearable
-            style="width: 140px"
-          />
-          <n-select
-            v-model:value="filterParams.business_line_id"
-            placeholder="项目"
-            :options="businessLineOptions"
-            clearable
-            style="width: 160px"
-          />
-          <n-select
-            v-model:value="filterParams.status"
-            placeholder="状态"
-            :options="statusOptions"
-            clearable
-            style="width: 120px"
-          />
-          <n-button type="primary" @click="handleSearch">搜索</n-button>
-          <n-button @click="handleReset">重置</n-button>
+        <n-space align="flex-start">
+          <!-- 右侧：筛选条件 -->
+          <n-space align="flex-start" style="flex: 1; margin-left: auto;">
+            <n-select
+              v-model:value="filterParams.task_type"
+              placeholder="任务类型"
+              :options="taskTypeOptions"
+              clearable
+              style="width: 140px"
+            />
+            <n-select
+              v-model:value="filterParams.business_line_id"
+              placeholder="项目"
+              :options="businessLineOptions"
+              clearable
+              style="width: 160px"
+            />
+            <n-select
+              v-model:value="filterParams.status"
+              placeholder="状态"
+              :options="statusOptions"
+              clearable
+              style="width: 120px"
+            />
+            <n-button type="primary" @click="handleSearch">搜索</n-button>
+            <n-button @click="handleReset">重置</n-button>
+          </n-space>
         </n-space>
-        <n-space v-if="checkedRowKeys.length > 0">
-          <n-button type="primary" danger @click="handleBatchDelete">
-            <template #icon>
-              <n-icon><DeleteOutlined /></n-icon>
-            </template>
-            批量删除 ({{ checkedRowKeys.length }})
-          </n-button>
-          <n-button @click="checkedRowKeys = []">取消选择</n-button>
-        </n-space>
+      </div>
+
+      <!-- 创建任务按钮（在查询表单下方） -->
+      <div class="mb-4">
         <n-button type="primary" @click="goCreate">
           <template #icon>
             <n-icon><PlusOutlined /></n-icon>
           </template>
-          创建任务
+          创建新任务
         </n-button>
       </div>
+
+      <!-- 批量操作按钮组 -->
+      <n-space v-if="checkedRowKeys.length > 0" class="mb-4">
+        <n-button type="primary" danger @click="handleBatchDelete">
+          <template #icon>
+            <n-icon><DeleteOutlined /></n-icon>
+          </template>
+          批量删除 ({{ checkedRowKeys.length }})
+        </n-button>
+        <n-button @click="checkedRowKeys = []">取消选择</n-button>
+      </n-space>
 
       <!-- 表格 -->
       <BasicTable
@@ -206,31 +215,36 @@ const actionColumn = reactive({
     return h(TableAction, {
       style: 'button',
       actions: [
-        { label: '详情', onClick: () => handleDetail(record) },
+        { label: '详情', onClick: () => handleDetail(record), type: 'info' }, // Info 色
         {
           label: '报告',
           onClick: () => handleReport(record),
           ifShow: () => ['success', 'failed', 'cancelled'].includes(record.status),
+          type: 'primary', // Primary 色
         },
         {
           label: '启动',
           onClick: () => handleStart(record),
           ifShow: () => record.status === 'pending',
+          type: 'success', // Success 色
         },
         {
           label: '停止',
           onClick: () => handleStop(record),
           ifShow: () => record.status === 'running' || record.status === 'queued',
+          type: 'warning', // Warning 色
         },
         {
           label: '重新执行',
           onClick: () => handleRetry(record),
           ifShow: () => record.status === 'failed' || record.status === 'cancelled',
+          type: 'primary', // Primary 色
         },
         {
           label: '删除',
           onClick: () => handleDelete(record),
           ifShow: () => record.status !== 'running',
+          type: 'error', // Error 色
         },
       ],
     });

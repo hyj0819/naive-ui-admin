@@ -170,8 +170,8 @@ const actionColumn = reactive({
     return h(TableAction, {
       style: 'button',
       actions: [
-        { label: '详情', onClick: handleDetail.bind(null, record) },
-        { label: '删除', onClick: handleDelete.bind(null, record) },
+        { label: '详情', onClick: handleDetail.bind(null, record), type: 'info' }, // Info 色
+        { label: '删除', onClick: handleDelete.bind(null, record), type: 'error' }, // Error 色
       ],
     });
   },

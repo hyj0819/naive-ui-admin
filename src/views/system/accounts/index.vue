@@ -155,14 +155,17 @@ const actionColumn = reactive({
         {
           label: record.status === 1 ? '禁用' : '启用',
           onClick: handleToggleStatus.bind(null, record),
+          type: record.status === 1 ? 'warning' : 'success', // 禁用用 Warning，启用用 Success
         },
         {
           label: '编辑',
           onClick: handleEdit.bind(null, record),
+          type: 'info', // Info 色
         },
         {
           label: '删除',
           onClick: handleDelete.bind(null, record),
+          type: 'error', // Error 色
         },
       ],
     });

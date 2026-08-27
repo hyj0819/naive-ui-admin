@@ -195,10 +195,12 @@ const actionColumn = {
         {
           label: '编辑',
           onClick: () => openEditModal(row),
+          type: 'info', // Info 色
         },
         {
           label: '权限',
           onClick: () => openPermModal(row),
+          type: 'primary', // Primary 色
         },
       ],
       dropDownActions: [
