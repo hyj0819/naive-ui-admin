@@ -126,6 +126,53 @@
   </div>
   <!--项目配置-->
   <ProjectSetting ref="drawerSetting" />
+
+  <!-- 全局菜单搜索对话框 -->
+  <n-drawer v-model:show="showSearchDialog" :width="600" placement="right">
+    <n-drawer-content title="全局搜索" closable>
+      <div style="padding: 24px 0;">
+        <n-input 
+          v-model:value="searchQuery" 
+          placeholder="输入菜单名称进行搜索..."
+          clearable 
+          size="large"
+          @input="handleSearchInput"
+        >
+          <template #prefix>
+            <n-icon size="18"><SearchOutlined /></n-icon>
+          </template>
+        </n-input>
+
+        <div style="margin-top: 16px; max-height: 500px; overflow-y: auto;">
+          <n-empty v-if="!searchQuery" description="请输入关键词搜索菜单" style="margin-top: 32px;" />
+          
+          <template v-else-if="filteredMenus.length === 0">
+            <n-empty description="未找到匹配的菜单项" />
+          </template>
+
+          <template v-else>
+            <n-list hoverable clickable>
+              <n-list-item 
+                v-for="menu in filteredMenus" 
+                :key="menu.key"
+                @click="navigateToMenu(menu.key)"
+              >
+                <template #prefix>
+                  <n-space align="center">
+                    <n-tag type="primary" size="small">{{ menu.type }}</n-tag>
+                  </n-space>
+                </template>
+                {{ menu.label }}
+                <template #extra>
+                  <n-text type="info" size="small">{{ menu.path || '根节点' }}</n-text>
+                </template>
+              </n-list-item>
+            </n-list>
+          </template>
+        </div>
+      </div>
+    </n-drawer-content>
+  </n-drawer>
 </template>
 
 <script lang="ts">
@@ -136,11 +183,12 @@
   import { useScreenLockStore } from '@/store/modules/screenLock';
   import { useUserStore } from '@/store/modules/user';
   import { TABS_ROUTES } from '@/store/mutation-types';
-  import { NDialogProvider, useDialog, useMessage } from 'naive-ui';
+  import { NDialogProvider, NInput, useDialog, useMessage } from 'naive-ui';
   import { computed, defineComponent, reactive, ref, toRefs, unref } from 'vue';
   import { useRoute, useRouter } from 'vue-router';
   import components from './components';
   import ProjectSetting from './ProjectSetting.vue';
+  import { SearchOutlined } from '@vicons/antd';
 
   export default defineComponent({
     name: 'PageHeader',
@@ -162,6 +210,7 @@
       const { navMode, navTheme, headerSetting, menuSetting, crumbsSetting } = useProjectSetting();
 
       const drawerSetting = ref();
+      const showSearchDialog = ref(false);
 
       const state = reactive({
         username: userStore?.info?.username ?? '',
@@ -177,6 +226,60 @@
           ? props.inverted
           : !props.inverted;
       });
+
+      // ========== 菜单搜索功能 ==========
+      const searchQuery = ref('');
+      
+      // 从菜单树生成可搜索的列表
+      function generateSearchableMenus(routeItem: any): any[] {
+        if (!routeItem || !routeItem.meta?.title) return [];
+        
+        const result: Array<{ key: string; label: string; type: string; path?: string }> = [
+          { key: routeItem.name, label: routeItem.meta.title, type: '菜单', path: routeItem.path },
+        ];
+        
+        if (routeItem.children && routeItem.children.length > 0) {
+          for (const child of routeItem.children) {
+            result.push(...generateSearchableMenus(child));
+          }
+        }
+        
+        return result;
+      }
+      
+      // 获取当前路由及其父级菜单
+      const currentMenuTree = computed(() => generator(route.matched));
+      
+      // 将所有菜单项展平
+      const allMenus = computed(() => {
+        const menus: Array<{ key: string; label: string; type: string; path?: string }> = [];
+        for (const item of unref(currentMenuTree)) {
+          menus.push(...generateSearchableMenus(item));
+        }
+        return menus;
+      });
+      
+      // 过滤后的搜索结果
+      const filteredMenus = computed(() => {
+        if (!searchQuery.value.trim()) return [];
+        const query = searchQuery.value.toLowerCase();
+        return allMenus.value.filter(
+          menu => 
+            menu.label.toLowerCase().includes(query) || 
+            menu.key.toLowerCase().includes(query)
+        );
+      });
+      
+      // 处理输入变化
+      function handleSearchInput() {
+        // 实时搜索
+      }
+      
+      // 导航到目标菜单
+      function navigateToMenu(key: string) {
+        showSearchDialog.value = false;
+        router.push({ name: key });
+      }
 
       const mixMenu = computed(() => {
         return unref(menuSetting).mixMenu;
@@ -280,6 +383,9 @@
         {
           icon: 'SearchOutlined',
           tips: '搜索',
+          eventObject: {
+            click: () => { showSearchDialog.value = true; },
+          },
         },
         // GitHub 链接已移除
         // {
@@ -308,7 +414,7 @@
         },
       ];
 
-      //头像下拉菜单
+      // 头像下拉菜单
       const avatarSelect = (key) => {
         switch (key) {
           case 1:
@@ -319,6 +425,11 @@
             break;
         }
       };
+
+      // 打开搜索对话框
+      function openSearchDrawer() {
+        showSearchDialog.value = true;
+      }
 
       function openSetting() {
         const { openDrawer } = drawerSetting.value;
@@ -349,6 +460,12 @@
         websiteConfig,
         handleMenuCollapsed,
         RedirectName,
+        showSearchDialog,
+        openSearchDrawer,
+        searchQuery,
+        filteredMenus,
+        navigateToMenu,
+        handleSearchInput,
       };
     },
   });
